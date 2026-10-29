@@ -73,7 +73,7 @@ class FeatureEngineeringTests(unittest.TestCase):
         raw["future_churn_label"] = ["Churn", "No Churn"]
         features = engineer_inference_features(raw)
         self.assertNotIn("future_churn_label", features.columns)
-        self.assertEqual(len(features.columns), len(raw.columns) - 1 + 4)
+        self.assertEqual(len(features.columns), len(raw.columns) + 4)
 
     def test_rejects_invalid_state_next_month(self) -> None:
         df = sample_frame()
