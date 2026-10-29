@@ -37,14 +37,16 @@ Customer-Churn-Prediction/
 ├── src/
 │   ├── validate_target.py
 │   ├── validate_data.py
-│   └── feature_engineering.py
+│   ├── feature_engineering.py
+│   └── preprocess.py
 ├── models/               # Saved artifacts (ignored by Git by default)
 ├── reports/
 │   └── figures/
 ├── tests/
 │   ├── test_target_validation.py
 │   ├── test_data_validation.py
-│   └── test_feature_engineering.py
+│   ├── test_feature_engineering.py
+│   └── test_preprocess.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
