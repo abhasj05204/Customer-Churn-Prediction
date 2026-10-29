@@ -65,7 +65,13 @@ jobs:
       - name: Tune, select model, choose threshold and evaluate holdout
         run: python -m src.finalize --trials "$OPTUNA_TRIALS" --folds "$CV_FOLDS" --output-dir outputs
 
-      - name: Upload model and evaluation reports
+      - name: Smoke-test saved model through FastAPI
+        run: python -m src.smoke_test --model outputs/final_pipeline.joblib --report outputs/final_evaluation.json
+
+      - name: Generate SHAP reports
+        run: python -m src.explain --model outputs/final_pipeline.joblib --output-dir outputs/explainability --background-size 50 --explain-size 12
+
+      - name: Upload model, evaluation and explainability reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
