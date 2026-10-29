@@ -40,7 +40,7 @@ def validate_tuning_config(y: pd.Series, n_trials: int, n_splits: int) -> None:
 
 
 def suggest_xgb_params(trial: Any, random_state: int = 42) -> dict[str, Any]:
-    """Suggest XGBoost parameters without changing the feature or validation data."""
+    """Suggest XGBoost parameters without changing feature or validation data."""
     return {
         "n_estimators": trial.suggest_int("n_estimators", 150, 500, step=50),
         "max_depth": trial.suggest_int("max_depth", 2, 8),
@@ -58,32 +58,21 @@ def suggest_xgb_params(trial: Any, random_state: int = 42) -> dict[str, Any]:
     }
 
 
-def run_optuna_experiment(
-    csv_path: Path = DEFAULT_DATA,
-    output_dir: Path | None = None,
-    test_size: float = 0.20,
+def tune_xgb_params(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
     random_state: int = 42,
     n_splits: int = 5,
     n_trials: int = 30,
-) -> dict[str, Any]:
-    """Tune XGBoost with CV on the training split, leaving test rows unscored."""
-    if not 0.05 <= test_size <= 0.5:
-        raise ValueError("test_size must be between 0.05 and 0.5.")
-
-    raw_df, dataset_sha256 = load_dataset(csv_path)
-    engineered = engineer_features(raw_df)
-    X, y = split_features_target(engineered)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state, stratify=y
-    )
+    study_name: str = "churn_xgboost_training_cv",
+) -> tuple[optuna.Study, dict[str, Any]]:
+    """Tune XGBoost on the provided training portion only, returning study and params."""
     validate_tuning_config(y_train, n_trials=n_trials, n_splits=n_splits)
-
     cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
 
     def objective(trial: optuna.Trial) -> float:
         params = suggest_xgb_params(trial, random_state=random_state)
-        model = XGBClassifier(**params)
-        pipeline = build_model_pipeline(X_train, model)
+        pipeline = build_model_pipeline(X_train, XGBClassifier(**params))
         scores = cross_validate(
             pipeline,
             X_train,
@@ -94,27 +83,47 @@ def run_optuna_experiment(
             error_score="raise",
             return_train_score=False,
         )
-        roc_auc_scores = [float(value) for value in scores["test_roc_auc"]]
-        pr_auc_scores = [float(value) for value in scores["test_average_precision"]]
-        trial.set_user_attr("fold_roc_auc", roc_auc_scores)
-        trial.set_user_attr("mean_average_precision", float(sum(pr_auc_scores) / len(pr_auc_scores)))
-        trial.set_user_attr("std_roc_auc", float(pd.Series(roc_auc_scores).std(ddof=1)))
-        return float(sum(roc_auc_scores) / len(roc_auc_scores))
+        roc_scores = [float(value) for value in scores["test_roc_auc"]]
+        ap_scores = [float(value) for value in scores["test_average_precision"]]
+        trial.set_user_attr("fold_roc_auc", roc_scores)
+        trial.set_user_attr("fold_average_precision", ap_scores)
+        trial.set_user_attr("mean_average_precision", float(sum(ap_scores) / len(ap_scores)))
+        trial.set_user_attr("std_roc_auc", float(pd.Series(roc_scores).std(ddof=1)))
+        return float(sum(roc_scores) / len(roc_scores))
 
     study = optuna.create_study(
-        study_name="churn_xgboost_training_cv",
+        study_name=study_name,
         direction="maximize",
         sampler=optuna.samplers.TPESampler(seed=random_state),
     )
     study.optimize(objective, n_trials=n_trials, show_progress_bar=True, gc_after_trial=True)
-
     best_params = dict(study.best_params)
-    best_params.update(
-        {
-            "random_state": random_state,
-            "eval_metric": "logloss",
-            "n_jobs": 1,
-        }
+    best_params.update({"random_state": random_state, "eval_metric": "logloss", "n_jobs": 1})
+    return study, best_params
+
+
+def run_optuna_experiment(
+    csv_path: Path = DEFAULT_DATA,
+    output_dir: Path | None = None,
+    test_size: float = 0.20,
+    random_state: int = 42,
+    n_splits: int = 5,
+    n_trials: int = 30,
+) -> dict[str, Any]:
+    """Tune XGBoost on the development split and leave holdout data unscored."""
+    if not 0.05 <= test_size <= 0.5:
+        raise ValueError("test_size must be between 0.05 and 0.5.")
+
+    raw_df, dataset_sha256 = load_dataset(csv_path)
+    engineered = engineer_features(raw_df)
+    X, y = split_features_target(engineered)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+
+    study, best_params = tune_xgb_params(
+        X_train, y_train, random_state=random_state,
+        n_splits=n_splits, n_trials=n_trials,
     )
     best_pipeline = build_model_pipeline(X_train, XGBClassifier(**best_params))
     best_pipeline.fit(X_train, y_train)
@@ -164,8 +173,8 @@ def run_optuna_experiment(
         },
         "warning": (
             "This experiment predicts State, not next-month churn. It does not score "
-            "the holdout set. Do not compare the CV score directly with historical test "
-            "ROC-AUC or treat the best CV score as final test performance."
+            "the holdout set. Do not compare the best CV score directly with historical "
+            "test ROC-AUC or treat it as final test performance."
         ),
     }
 
@@ -188,7 +197,7 @@ def run_optuna_experiment(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Tune XGBoost with stratified CV on the training set only."
+        description="Tune XGBoost with stratified CV on the training split only."
     )
     parser.add_argument("--csv", type=Path, default=DEFAULT_DATA)
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
