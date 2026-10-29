@@ -107,8 +107,8 @@ def create_app(
         title="Customer Churn Prediction API",
         version="1.0.0",
         description=(
-            "Predicts the dataset State label from customer service and billing features. "
-            "This model is not a verified next-month churn predictor."
+            "Predicts the supplied StateNextMonth label from customer service and billing features. "
+            "The target provenance and temporal alignment have not been independently verified."
         ),
     )
     application.state.model = loaded_model
@@ -142,7 +142,7 @@ def create_app(
         return {
             "model_loaded": application.state.model is not None,
             "model_name": application.state.model_name,
-            "target": "State",
+            "target": "StateNextMonth",
             "decision_threshold": float(application.state.threshold),
             "prediction_horizon": "not established by the selected dataset",
         }
