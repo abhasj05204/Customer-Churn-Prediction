@@ -1,44 +1,52 @@
 # Target validation — Step 2
 
-## Dataset selected for this project
+## Decision for this repository
 
-The newly selected dataset is the 21-column version uploaded by the project owner. Its SHA-256 is:
+**Chosen task:** binary classification of the supplied `State` label (`No Churn` vs `Churn`).
 
-~~~text
-58a435baed4902c1642facdbba81f8faa7c10d7fcec37b9c5f7077aecaf47ffd
-~~~
+**Not claimed:** predicting whether a currently active customer will churn next month. The selected dataset does not contain `StateNextMonth`, observation timestamps, or documented future-outcome labels. A temporal prediction horizon cannot be inferred from the column names alone.
 
-It contains 7,043 rows and 21 columns. It has the label column State and does **not** contain StateNextMonth. A byte-for-byte check confirmed that this file is exactly the previously committed 22-column CSV with the final StateNextMonth column removed and line endings normalized. The source data rows and State labels are unchanged.
+The project owner's selected CSV is the source of truth for this repository. Exact provenance of the Kaggle page/version was not recalled, so external schema comparisons below are contextual, not proof that this file is byte-for-byte the original Kaggle download.
 
-## Observed data checks
+## Selected dataset fingerprint
 
-- Rows: 7,043
-- Columns: 21
-- Unique customer IDs: 7,043
-- Duplicate rows: 0
-- Missing cells: 0
-- State labels: 5,174 No Churn and 1,869 Churn
-- Observed Churn share: 26.54%
-- Tenure range: 0–72
-- Tenure equal to zero: 11 rows
+- File: `data/telco_churn.csv`
+- SHA-256: `58a435baed4902c1642facdbba81f8faa7c10d7fcec37b9c5f7077aecaf47ffd`
+- Rows: 7,043; columns: 21
+- Target: `State`
+- Labels: 5,174 `No Churn`, 1,869 `Churn`
+- Churn label share: 26.54%
+- `StateNextMonth`: absent
 
-The uploaded file has no missing data in its current representation, including TotalCharges, which is numeric. These checks describe this file; they do not prove the dataset is free of every possible data-quality issue.
+The selected file is byte-for-byte identical to the previously committed 22-column repository CSV after removing the final `StateNextMonth` column and normalizing line endings. The feature columns and `State` labels used by the original notebook are unchanged.
 
-## What the current notebook predicts
+## Target semantics: evidence and limits
 
-The notebook maps State labels to 0/1 and trains models to classify State. The recorded historical model metrics therefore apply to the State classification task.
+The values in `State` are unambiguously the supplied binary label for this project because the file contains only `No Churn` and `Churn`, and the historical notebook maps those values to 0 and 1. The dataset alone does **not** establish the exact observation time, nor prove that the features were captured before a future churn event.
 
-## What cannot be claimed from this file
+A commonly distributed reference version of the IBM Telco Customer Churn dataset is published at [Kaggle: Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn). Reference examples for that dataset use 7,043 rows, the familiar customer/service/billing fields, and a `Churn` label. This is a plausible schema comparison, not an assertion that the project owner's exact Kaggle download has been identified. In the selected file, the label is named `State`, its values are `No Churn`/`Churn`, and `TotalCharges` is already numeric with 11 zero-tenure rows sharing the same positive charge value. Those transformations need provenance confirmation if available.
 
-This selected dataset does not have a StateNextMonth target, an explicit observation date, or documented future-outcome labels. We cannot claim that a model trained only on this file predicts churn in the next month. The previous repository version contained an extra StateNextMonth column, but that column has been removed from the selected source dataset and must not be silently used as ground truth.
+## Model and product wording
 
-The chosen target for the current data is State. To develop a genuine forward-looking churn model in the future, we would need appropriately time-aligned customer features and outcomes, together with reliable documentation/provenance. Column names alone are not evidence of prediction horizon.
+Use descriptions such as:
+- “Classifies the provided customer `State` label.”
+- “Outputs a model probability for the `Churn` class within this dataset.”
 
-## Reproducible commands
+Do not use descriptions such as:
+- “Predicts next-month churn.”
+- “Forecasts future cancellation.”
+- “Identifies customers who will definitely churn.”
+
+A verified forward-looking project would require a documented observation date/cut-off, features available by that date, and an outcome label measured after that cut-off. The old `StateNextMonth` column was removed from the selected data and must not be silently used as ground truth.
+
+## Reproducible checks
 
 From the repository root:
 
 ~~~bash
 python -m src.validate_target
+python -m src.validate_data
 python -m unittest discover -s tests -v
 ~~~
+
+The audit reports label counts and schema facts; it does not manufacture missing future labels or infer a temporal horizon.
