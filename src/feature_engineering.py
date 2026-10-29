@@ -1,4 +1,4 @@
-"""Reusable feature engineering for the selected State-only churn dataset."""
+"""Reusable feature engineering for training and inference on the State target."""
 from __future__ import annotations
 
 import numpy as np
@@ -12,6 +12,9 @@ REQUIRED_INPUT_COLUMNS = (
     "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
     "MonthlyCharges", "TotalCharges", "State",
 )
+RAW_FEATURE_COLUMNS = tuple(
+    column for column in REQUIRED_INPUT_COLUMNS if column not in {"customerID", "State"}
+)
 SERVICE_COLUMNS = (
     "PhoneService", "MultipleLines", "OnlineSecurity", "OnlineBackup",
     "DeviceProtection", "TechSupport", "StreamingTV", "StreamingMovies",
@@ -19,36 +22,25 @@ SERVICE_COLUMNS = (
 SECURITY_SUPPORT_COLUMNS = (
     "OnlineSecurity", "OnlineBackup", "DeviceProtection", "TechSupport",
 )
-IDENTIFIER_OR_UNAVAILABLE_LABEL_COLUMNS = ("customerID", "StateNextMonth")
+IDENTIFIER_OR_UNAVAILABLE_LABEL_COLUMNS = ("customerID", "StateNextMonth", "State")
 
 
-def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Return a model-ready, not-yet-encoded frame with numeric State target.
+def engineer_inference_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Transform raw customer features without requiring or using target labels.
 
-    The input frame is not mutated. Customer ID and the optional historical
-    StateNextMonth field are excluded. Existing source values are not silently
-    imputed or overwritten; suspicious TotalCharges rows are left for a
-    documented modeling experiment.
+    Accepts either the raw feature columns alone or a source dataset that also
+    contains customerID and/or target columns. Identifier and target columns
+    are excluded. The returned feature column order matches training predictors.
     """
     if df.empty:
         raise ValueError("Cannot engineer features from an empty dataframe.")
-    missing = [column for column in REQUIRED_INPUT_COLUMNS if column not in df.columns]
+    missing = [column for column in RAW_FEATURE_COLUMNS if column not in df.columns]
     if missing:
-        raise ValueError(f"Missing required feature-engineering columns: {missing}")
+        raise ValueError(f"Missing required input feature columns: {missing}")
 
     out = df.drop(
         columns=[c for c in IDENTIFIER_OR_UNAVAILABLE_LABEL_COLUMNS if c in df.columns]
     ).copy()
-
-    target = out["State"].astype("string").str.strip()
-    invalid = sorted(
-        str(value) for value in target[~target.isin(TARGET_MAP)].dropna().unique()
-    )
-    missing_target = int(target.isna().sum())
-    if invalid or missing_target:
-        raise ValueError(
-            f"Invalid State target values: {invalid}; missing target rows: {missing_target}."
-        )
 
     for column in ("tenure", "MonthlyCharges", "TotalCharges"):
         converted = pd.to_numeric(out[column], errors="coerce")
@@ -70,7 +62,24 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     out["SecuritySupportCount"] = (
         out[list(SECURITY_SUPPORT_COLUMNS)].eq("Yes").sum(axis=1).astype(int)
     )
+    return out
 
+
+def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Return an engineered training frame with a binary State target."""
+    if "State" not in df.columns:
+        raise ValueError("Training dataframe must contain the State target column.")
+    target = df["State"].astype("string").str.strip()
+    invalid = sorted(
+        str(value) for value in target[~target.isin(TARGET_MAP)].dropna().unique()
+    )
+    missing_target = int(target.isna().sum())
+    if invalid or missing_target:
+        raise ValueError(
+            f"Invalid State target values: {invalid}; missing target rows: {missing_target}."
+        )
+
+    out = engineer_inference_features(df)
     out["State"] = target.map(TARGET_MAP).astype("int8")
     return out
 
@@ -85,5 +94,7 @@ def split_features_target(engineered_df: pd.DataFrame) -> tuple[pd.DataFrame, pd
     y = engineered_df["State"].copy().astype("int8")
     forbidden = [c for c in ("customerID", "StateNextMonth") if c in X.columns]
     if forbidden:
-        raise ValueError(f"Identifier/unavailable target columns must not be predictors: {forbidden}")
+        raise ValueError(
+            f"Identifier/unavailable target columns must not be predictors: {forbidden}"
+        )
     return X, y
