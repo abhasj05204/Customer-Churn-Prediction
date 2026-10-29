@@ -24,6 +24,7 @@ The existing notebook includes EDA, engineered features, train/test split, prepr
 See:
 - [Project baseline and historical metrics](docs/PROJECT_BASELINE.md)
 - [Target validation findings](docs/TARGET_VALIDATION.md)
+- [Data quality audit](docs/DATA_QUALITY.md)
 
 ## Repository structure
 
@@ -34,15 +35,18 @@ Customer-Churn-Prediction/
 ├── notebooks/
 │   └── EDA.ipynb
 ├── src/
-│   └── validate_target.py
+│   ├── validate_target.py
+│   └── validate_data.py
 ├── models/               # Saved artifacts (ignored by Git by default)
 ├── reports/
 │   └── figures/
 ├── tests/
-│   └── test_target_validation.py
+│   ├── test_target_validation.py
+│   └── test_data_validation.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
-│   └── TARGET_VALIDATION.md
+│   ├── TARGET_VALIDATION.md
+│   └── DATA_QUALITY.md
 ├── requirements.txt
 ├── README.md
 └── main.py
@@ -76,6 +80,7 @@ From the repository root:
 
 ~~~bash
 python -m src.validate_target
+python -m src.validate_data
 python -m unittest discover -s tests -v
 ~~~
 
