@@ -63,6 +63,14 @@ def main() -> None:
     finalize_parser.add_argument("--folds", type=int, default=5)
     finalize_parser.add_argument("--trials", type=int, default=30)
 
+    imbalance_parser = subparsers.add_parser(
+        "imbalance", help="Compare class weighting, SMOTE and SMOTENC with training-only CV."
+    )
+    imbalance_parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
+    imbalance_parser.add_argument("--test-size", type=float, default=0.20)
+    imbalance_parser.add_argument("--random-state", type=int, default=42)
+    imbalance_parser.add_argument("--folds", type=int, default=5)
+
     explain_parser = subparsers.add_parser(
         "explain", help="Generate SHAP explanations for a saved final pipeline."
     )
@@ -131,6 +139,19 @@ def main() -> None:
             random_state=args.random_state,
             n_splits=args.folds,
             n_trials=args.trials,
+        )
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+
+    if command == "imbalance":
+        from src.compare_imbalance import run_imbalance_experiment
+
+        report = run_imbalance_experiment(
+            csv_path=DEFAULT_DATA,
+            output_dir=args.output_dir,
+            test_size=args.test_size,
+            random_state=args.random_state,
+            n_splits=args.folds,
         )
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return
