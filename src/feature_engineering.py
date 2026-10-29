@@ -28,9 +28,9 @@ IDENTIFIER_OR_UNAVAILABLE_LABEL_COLUMNS = ("customerID", "StateNextMonth", "Stat
 def engineer_inference_features(df: pd.DataFrame) -> pd.DataFrame:
     """Transform raw customer features without requiring or using target labels.
 
-    Accepts either the raw feature columns alone or a source dataset that also
-    contains customerID and/or target columns. Identifier and target columns
-    are excluded. The returned feature column order matches training predictors.
+    Accepts the 19 declared raw feature columns or a source dataset that also
+    contains identifiers/labels. Only the whitelisted feature contract is retained;
+    all identifiers, targets, timestamps, and unreviewed extra columns are excluded.
     """
     if df.empty:
         raise ValueError("Cannot engineer features from an empty dataframe.")
@@ -38,9 +38,10 @@ def engineer_inference_features(df: pd.DataFrame) -> pd.DataFrame:
     if missing:
         raise ValueError(f"Missing required input feature columns: {missing}")
 
-    out = df.drop(
-        columns=[c for c in IDENTIFIER_OR_UNAVAILABLE_LABEL_COLUMNS if c in df.columns]
-    ).copy()
+    # Whitelist only the declared predictor contract. This prevents an unreviewed
+    # extra column (including a label-like field) from silently entering training
+    # or inference features.
+    out = df.loc[:, list(RAW_FEATURE_COLUMNS)].copy()
 
     for column in ("tenure", "MonthlyCharges", "TotalCharges"):
         converted = pd.to_numeric(out[column], errors="coerce")
