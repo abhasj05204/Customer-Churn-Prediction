@@ -40,3 +40,6 @@ artifacts/
 # Generated reports; keep the folder placeholder
 reports/figures/*
 !reports/figures/.gitkeep
+
+# Local experiment reports and fitted pipelines
+/outputs/
