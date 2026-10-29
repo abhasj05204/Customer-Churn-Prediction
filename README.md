@@ -90,6 +90,16 @@ python -m unittest discover -s tests -v
 
 The target audit reports the label distribution, row/column counts, customer ID duplication, and whether a separate next-month target exists. It does not infer a prediction horizon from a column name.
 
+## Run baseline cross-validated model comparison
+
+From the repository root, run the baseline experiment with the default stratified 5-fold cross-validation:
+
+~~~bash
+python -m src.train --output-dir outputs
+~~~
+
+The script compares balanced Logistic Regression, balanced Random Forest, and unresampled XGBoost using training-only cross-validation, selects by mean CV ROC-AUC, then reports a holdout evaluation for the selected baseline. It saves a local JSON report and joblib model under the chosen output directory. The model artifact is ignored by Git. This is a baseline experiment; do not use its holdout results to tune model settings or decision thresholds.
+
 ## Run the existing notebook
 
 Start Jupyter from the notebooks directory so its relative data path resolves:
