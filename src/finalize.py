@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
@@ -175,7 +176,7 @@ def run_final_evaluation(
         selected_estimator = candidate_estimators(random_state=random_state)[selected_name]
 
     # Fit only on model-training data to choose threshold on a separate validation split.
-    threshold_model = build_model_pipeline(X_model, selected_estimator)
+    threshold_model = build_model_pipeline(X_model, clone(selected_estimator))
     threshold_model.fit(X_model, y_model)
     validation_probabilities = threshold_model.predict_proba(X_threshold)[:, 1]
     chosen_threshold, threshold_report = select_f1_threshold(
@@ -183,7 +184,7 @@ def run_final_evaluation(
     )
 
     # After model and threshold selection are frozen, refit on all development data.
-    final_pipeline = build_model_pipeline(X_development, selected_estimator)
+    final_pipeline = build_model_pipeline(X_development, clone(selected_estimator))
     final_pipeline.fit(X_development, y_development)
     holdout_report = evaluate_model(
         final_pipeline, X_test, y_test, threshold=chosen_threshold
