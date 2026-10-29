@@ -45,7 +45,8 @@ Customer-Churn-Prediction/
 │   ├── evaluate.py
 │   ├── train.py
 │   ├── optimize.py
-│   └── finalize.py
+│   ├── finalize.py
+│   └── explain.py
 ├── models/               # Saved artifacts (ignored by Git by default)
 ├── reports/
 │   └── figures/
@@ -57,7 +58,8 @@ Customer-Churn-Prediction/
 │   ├── test_evaluate.py
 │   ├── test_train.py
 │   ├── test_optimize.py
-│   └── test_finalize.py
+│   ├── test_finalize.py
+│   └── test_explain.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
@@ -134,6 +136,18 @@ python -m src.finalize --trials 30 --folds 5 --output-dir outputs
 The command writes `outputs/final_evaluation.json` and `outputs/final_pipeline.joblib`. Review the selected model, threshold-validation metrics, final holdout metrics, and confusion counts in the JSON report. The holdout is not used to choose the model or threshold.
 
 Equivalent top-level command: `python main.py finalize --trials 30`.
+
+## Run SHAP explainability
+
+After the final pipeline has been created, generate global mean-absolute SHAP importance, a beeswarm plot, and per-row local explanations from the development partition only:
+
+~~~bash
+python -m src.explain --model outputs/final_pipeline.joblib --output-dir outputs/explainability
+~~~
+
+This command does not use the holdout rows for explanations. It writes `shap_global_importance.csv`, `shap_local_explanations.csv`, `shap_global_bar.png`, `shap_beeswarm.png`, and a JSON report. SHAP values describe model associations; they do not prove causation.
+
+Equivalent top-level command: `python main.py explain`.
 
 ## Run the existing notebook
 
