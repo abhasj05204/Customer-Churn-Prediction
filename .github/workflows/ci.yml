@@ -30,6 +30,33 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
+      - name: Ensure Python source files are not empty
+        run: |
+          empty_file="$(find src api tests -type f -name '*.py' -size 0 -print -quit)"
+          if [ -n "$empty_file" ]; then
+            echo "Empty Python source/test file found: $empty_file"
+            exit 1
+          fi
+
+      - name: Validate notebook JSON and schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("notebooks/EDA.ipynb")
+          notebook = json.loads(path.read_text(encoding="utf-8"))
+          if not notebook.get("cells"):
+              raise SystemExit("Notebook contains no cells")
+          empty_cells = [
+              i for i, cell in enumerate(notebook["cells"])
+              if not "".join(cell.get("source", [])).strip()
+          ]
+          if empty_cells:
+              raise SystemExit(f"Notebook contains empty source cells: {empty_cells}")
+          print(f"Notebook JSON valid: {len(notebook['cells'])} cells")
+          PY
+
       - name: Run all unit tests
         run: python -m unittest discover -s tests -v
 
