@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
+from src.compare_imbalance import compare_imbalance_strategies
 from src.preprocess import build_smote_pipeline, build_smotenc_pipeline
 
 
@@ -31,6 +32,22 @@ class ImbalancePipelineTests(unittest.TestCase):
         probabilities = model.predict_proba(X[:7])
         self.assertEqual(probabilities.shape, (7, 2))
         self.assertTrue(np.isfinite(probabilities).all())
+
+
+    def test_fair_comparison_runs_same_cv_metrics_for_each_strategy(self) -> None:
+        X, y = mixed_training_data()
+        results = compare_imbalance_strategies(
+            X, y, random_state=42, n_splits=3
+        )
+        self.assertEqual(len(results), 4)
+        self.assertIn("Logistic Regression (no balancing)", results)
+        self.assertIn("Logistic Regression (class_weight=balanced)", results)
+        self.assertIn("Logistic Regression + ordinary SMOTE (experimental)", results)
+        self.assertIn("Logistic Regression + SMOTENC", results)
+        for metrics in results.values():
+            self.assertIn("roc_auc", metrics)
+            self.assertEqual(len(metrics["roc_auc"]["fold_scores"]), 3)
+            self.assertTrue(0.0 <= metrics["roc_auc"]["mean"] <= 1.0)
 
     def test_smotenc_preserves_mixed_feature_contract(self) -> None:
         X, y = mixed_training_data()
