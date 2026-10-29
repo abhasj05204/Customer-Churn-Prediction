@@ -42,7 +42,8 @@ Customer-Churn-Prediction/
 │   ├── feature_engineering.py
 │   ├── preprocess.py
 │   ├── evaluate.py
-│   └── train.py
+│   ├── train.py
+│   └── optimize.py
 ├── models/               # Saved artifacts (ignored by Git by default)
 ├── reports/
 │   └── figures/
@@ -52,7 +53,8 @@ Customer-Churn-Prediction/
 │   ├── test_feature_engineering.py
 │   ├── test_preprocess.py
 │   ├── test_evaluate.py
-│   └── test_train.py
+│   ├── test_train.py
+│   └── test_optimize.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
@@ -106,6 +108,18 @@ python -m src.train --output-dir outputs
 
 The script compares balanced Logistic Regression, balanced Random Forest, and unresampled XGBoost using training-only cross-validation, selects by mean CV ROC-AUC, fits that baseline on the training portion, and deliberately leaves holdout metrics unevaluated. It saves a local JSON report and joblib model under the chosen output directory. The model artifact is ignored by Git. The holdout is reserved for final evaluation after model and threshold selection.
 
+## Run Optuna tuning
+
+Optuna searches XGBoost hyperparameters using stratified cross-validation **only on the training split**. Preprocessing is fitted separately within each CV training fold, no synthetic resampling is used, and the holdout test labels are not scored.
+
+~~~bash
+python -m src.optimize --trials 30 --folds 5 --output-dir outputs
+~~~
+
+The command writes `outputs/optuna_xgboost_cv.json` and `outputs/optuna_xgboost_pipeline.joblib`. These artifacts are local and ignored by Git. The CV score is a tuning estimate, not the final test score. Compare the tuned XGBoost candidate with the cross-validated Logistic Regression baseline before final model selection.
+
+Equivalent top-level command: `python main.py tune --trials 30`.
+
 ## Run the existing notebook
 
 Start Jupyter from the notebooks directory so its relative data path resolves:
@@ -134,10 +148,10 @@ The old Optuna validation score must not be treated as an unbiased generalizatio
 1. Define the intended business use and confirm the semantics/timing of State.
 2. Audit data quality and feature engineering. (Audit implementation is present; suspicious zero-tenure charges still need a documented modeling experiment.)
 3. Run and verify the cross-validated baseline in a clean environment; compare class-weighted models against no-resampling alternatives.
-4. Tune promising models using training-only CV; consider categorical-aware imbalance handling instead of ordinary SMOTE after one-hot encoding.
-5. Choose a decision threshold on validation predictions and reserve the holdout test for the final evaluation.
+4. Run Optuna tuning and compare its cross-validation results with the Logistic Regression baseline; assess class-weighting and categorical-aware imbalance handling.
+5. Choose a decision threshold using training-only out-of-fold/validation predictions and reserve the holdout test for final evaluation.
 6. Add model explainability, business insights, and production-facing inference modules.
-7. Add API, frontend, tests for end-to-end prediction, and deployment.
+7. Add API, frontend, end-to-end prediction tests, monitoring hooks, and deployment.
 
 ## Notes
 
