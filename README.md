@@ -44,7 +44,8 @@ Customer-Churn-Prediction/
 │   ├── preprocess.py
 │   ├── evaluate.py
 │   ├── train.py
-│   └── optimize.py
+│   ├── optimize.py
+│   └── finalize.py
 ├── models/               # Saved artifacts (ignored by Git by default)
 ├── reports/
 │   └── figures/
@@ -55,7 +56,8 @@ Customer-Churn-Prediction/
 │   ├── test_preprocess.py
 │   ├── test_evaluate.py
 │   ├── test_train.py
-│   └── test_optimize.py
+│   ├── test_optimize.py
+│   └── test_finalize.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
@@ -121,6 +123,18 @@ The command writes `outputs/optuna_xgboost_cv.json` and `outputs/optuna_xgboost_
 
 Equivalent top-level command: `python main.py tune --trials 30`.
 
+## Run final model selection, threshold tuning, and holdout evaluation
+
+This is the end-to-end modelling evaluation command. It compares baseline models and tunes XGBoost on a model-training subset using training-only stratified CV. A separate validation split selects the decision threshold. A one-standard-error rule prefers a simpler model when its mean CV score is statistically close to the best candidate. The final pipeline is refit on all development rows, then the untouched holdout is evaluated once using the frozen threshold.
+
+~~~bash
+python -m src.finalize --trials 30 --folds 5 --output-dir outputs
+~~~
+
+The command writes `outputs/final_evaluation.json` and `outputs/final_pipeline.joblib`. Review the selected model, threshold-validation metrics, final holdout metrics, and confusion counts in the JSON report. The holdout is not used to choose the model or threshold.
+
+Equivalent top-level command: `python main.py finalize --trials 30`.
+
 ## Run the existing notebook
 
 Start Jupyter from the notebooks directory so its relative data path resolves:
@@ -149,8 +163,8 @@ The old Optuna validation score must not be treated as an unbiased generalizatio
 1. Define the intended business use and confirm the semantics/timing of State.
 2. Audit data quality and feature engineering. (Audit implementation is present; suspicious zero-tenure charges still need a documented modeling experiment.)
 3. Run and verify the cross-validated baseline in a clean environment; compare class-weighted models against no-resampling alternatives.
-4. Run Optuna tuning and compare its cross-validation results with the Logistic Regression baseline; assess class-weighting and categorical-aware imbalance handling.
-5. Choose a decision threshold using training-only out-of-fold/validation predictions and reserve the holdout test for final evaluation.
+4. Run Optuna tuning and compare its cross-validation results with the Logistic Regression baseline; assess class-weighting and categorical-aware imbalance handling. A finalization command now uses a separate threshold-validation split and a one-standard-error model-selection rule.
+5. Use validation predictions to choose the decision threshold and reserve the holdout test for final evaluation. The `src.finalize` orchestration implements this workflow.
 6. Add model explainability, business insights, and production-facing inference modules.
 7. Add API, frontend, end-to-end prediction tests, monitoring hooks, and deployment.
 
