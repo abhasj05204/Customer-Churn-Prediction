@@ -1,34 +1,42 @@
-# Virtual environment
+# Virtual environments
 venv/
 .venv/
 
-# Python cache
+# Python bytecode and caches
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Environment variables
+# Environment variables and local secrets
 .env
+.env.*
+!.env.example
 
-# IDE
+# IDE and OS files
 .vscode/
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Model artifacts
+# Model artifacts (generated locally; use a documented artifact store later)
 *.pkl
 *.joblib
+*.model
 
-# Logs
+# Experiment tracking / local ML outputs
+mlruns/
+artifacts/
+
+# Logs and temporary files
 *.log
-
-# Temporary files
 *.tmp
 
-# Generated reports
+# Generated reports; keep the folder placeholder
 reports/figures/*
 !reports/figures/.gitkeep
