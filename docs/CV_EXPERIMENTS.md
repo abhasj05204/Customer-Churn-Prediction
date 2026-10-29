@@ -20,7 +20,7 @@ Metrics below are mean ± standard deviation across five folds.
 | Balanced Logistic Regression | 0.7499 ± 0.0145 | 0.5188 ± 0.0183 | 0.7967 ± 0.0382 | 0.6282 ± 0.0227 | **0.8458 ± 0.0125** | **0.6622 ± 0.0140** |
 | Balanced Random Forest | 0.7891 ± 0.0133 | 0.6400 ± 0.0355 | 0.4702 ± 0.0282 | 0.5419 ± 0.0291 | 0.8268 ± 0.0120 | 0.6197 ± 0.0315 |
 | XGBoost (no resampling) | **0.7987 ± 0.0105** | **0.6497 ± 0.0316** | 0.5271 ± 0.0272 | 0.5814 ± 0.0208 | 0.8422 ± 0.0095 | 0.6563 ± 0.0210 |
-| XGBoost, Optuna (30 exploratory trials) | — | — | — | — | **0.8502 ± 0.0130** | 0.6701 |
+| XGBoost, Optuna (30 exploratory trials) | — | — | — | — | **0.8504 ± 0.0132** | 0.6715 |
 
 The XGBoost Optuna result is from an exploratory 30-trial run over the same parameter ranges subsequently committed to `src/optimize.py`. It is not from the final clean, pinned environment. The improvement over Logistic Regression is small relative to fold variability and does not establish that XGBoost is robustly better.
 
