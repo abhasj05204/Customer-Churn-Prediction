@@ -21,6 +21,28 @@ REQUIRED_COLUMNS = ("customerID", "State")
 NUMERIC_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
 NONNEGATIVE_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
 VALID_TARGET_LABELS = ("No Churn", "Churn")
+VALID_CATEGORICAL_VALUES = {
+    "gender": ("Female", "Male"),
+    "Partner": ("Yes", "No"),
+    "Dependents": ("Yes", "No"),
+    "PhoneService": ("Yes", "No"),
+    "MultipleLines": ("Yes", "No", "No phone service"),
+    "InternetService": ("DSL", "Fiber optic", "No"),
+    "OnlineSecurity": ("Yes", "No", "No internet service"),
+    "OnlineBackup": ("Yes", "No", "No internet service"),
+    "DeviceProtection": ("Yes", "No", "No internet service"),
+    "TechSupport": ("Yes", "No", "No internet service"),
+    "StreamingTV": ("Yes", "No", "No internet service"),
+    "StreamingMovies": ("Yes", "No", "No internet service"),
+    "Contract": ("Month-to-month", "One year", "Two year"),
+    "PaperlessBilling": ("Yes", "No"),
+    "PaymentMethod": (
+        "Electronic check",
+        "Mailed check",
+        "Bank transfer (automatic)",
+        "Credit card (automatic)",
+    ),
+}
 
 
 def audit_dataset(df: pd.DataFrame) -> dict[str, Any]:
@@ -49,19 +71,51 @@ def audit_dataset(df: pd.DataFrame) -> dict[str, Any]:
     numeric_summary: dict[str, Any] = {}
     negative_counts: dict[str, int] = {}
     nonnumeric_counts: dict[str, int] = {}
+    nonfinite_counts: dict[str, int] = {}
+    numeric_domain_errors: dict[str, dict[str, int]] = {}
     for column in NUMERIC_COLUMNS:
         if column not in df.columns:
             continue
         converted = pd.to_numeric(df[column], errors="coerce")
         nonnumeric_counts[column] = int((df[column].notna() & converted.isna()).sum())
-        finite = converted[np.isfinite(converted)]
+        finite_mask = np.isfinite(converted)
+        finite = converted[finite_mask]
+        nonfinite_counts[column] = int((converted.notna() & ~finite_mask).sum())
         numeric_summary[column] = {
             "min": float(finite.min()) if not finite.empty else None,
             "max": float(finite.max()) if not finite.empty else None,
             "missing_or_non_numeric": int(converted.isna().sum()),
+            "non_finite": nonfinite_counts[column],
         }
         if column in NONNEGATIVE_COLUMNS:
             negative_counts[column] = int((converted < 0).sum())
+        domain_errors: dict[str, int] = {}
+        if column == "SeniorCitizen":
+            domain_errors["not_zero_or_one"] = int(
+                (~converted.isin([0, 1]) & converted.notna()).sum()
+            )
+        if column == "tenure":
+            domain_errors["not_integer"] = int(
+                ((converted.notna()) & (converted % 1 != 0)).sum()
+            )
+            domain_errors["above_72_months"] = int((converted > 72).sum())
+        if column == "MonthlyCharges":
+            domain_errors["not_positive"] = int((converted <= 0).sum())
+        numeric_domain_errors[column] = domain_errors
+
+    categorical_domain_errors: dict[str, dict[str, Any]] = {}
+    for column, allowed_values in VALID_CATEGORICAL_VALUES.items():
+        if column not in df.columns:
+            continue
+        values = df[column].astype("string").str.strip()
+        unexpected = sorted(
+            str(value) for value in values[~values.isin(allowed_values)].dropna().unique()
+        )
+        if unexpected:
+            categorical_domain_errors[column] = {
+                "unexpected_values": unexpected,
+                "rows_with_unexpected_values": int(values.isin(unexpected).sum()),
+            }
 
     anomaly: dict[str, Any] = {"zero_tenure_rows": None}
     if "tenure" in df.columns:
@@ -96,6 +150,12 @@ def audit_dataset(df: pd.DataFrame) -> dict[str, Any]:
         )
     if any(nonnumeric_counts.values()):
         warnings.append(f"Numeric columns contain non-numeric values: {nonnumeric_counts}")
+    if any(nonfinite_counts.values()):
+        warnings.append(f"Numeric columns contain non-finite values: {nonfinite_counts}")
+    if any(any(count > 0 for count in details.values()) for details in numeric_domain_errors.values()):
+        warnings.append(f"Numeric values outside expected domain: {numeric_domain_errors}")
+    if categorical_domain_errors:
+        warnings.append(f"Categorical values outside the declared schema: {categorical_domain_errors}")
     if any(count > 0 for count in negative_counts.values()):
         warnings.append(f"Non-negative numeric fields contain negative values: {negative_counts}")
     positive_zero_tenure = anomaly.get("zero_tenure_with_positive_total_charges", 0)
@@ -128,6 +188,9 @@ def audit_dataset(df: pd.DataFrame) -> dict[str, Any]:
         "numeric_summary": numeric_summary,
         "negative_counts": negative_counts,
         "nonnumeric_counts": nonnumeric_counts,
+        "nonfinite_counts": nonfinite_counts,
+        "numeric_domain_errors": numeric_domain_errors,
+        "categorical_domain_errors": categorical_domain_errors,
         "anomalies": anomaly,
         "warnings": warnings,
     }
