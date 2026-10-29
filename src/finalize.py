@@ -16,7 +16,7 @@ from sklearn.base import clone
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
-from src.evaluate import evaluate_model, evaluate_predictions
+from src.evaluate import evaluate_calibration, evaluate_model, evaluate_predictions
 from src.feature_engineering import engineer_features, split_features_target
 from src.optimize import tune_xgb_params
 from src.preprocess import build_model_pipeline
@@ -179,6 +179,9 @@ def run_final_evaluation(
     threshold_model = build_model_pipeline(X_model, clone(selected_estimator))
     threshold_model.fit(X_model, y_model)
     validation_probabilities = threshold_model.predict_proba(X_threshold)[:, 1]
+    calibration_report = evaluate_calibration(
+        y_threshold, validation_probabilities, n_bins=10
+    )
     chosen_threshold, threshold_report = select_f1_threshold(
         y_threshold, validation_probabilities
     )
@@ -222,6 +225,10 @@ def run_final_evaluation(
         },
         "model_selection": selection_report,
         "threshold_selection": threshold_report,
+        "probability_calibration_on_threshold_validation": calibration_report,
+        "calibration_decision": (
+            "Diagnostics are reported for review; no calibration layer is applied automatically."
+        ),
         "final_model": selected_name,
         "final_threshold": float(chosen_threshold),
         "holdout_test_evaluation": holdout_report,
