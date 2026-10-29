@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.audit_leakage import audit_feature_leakage
 from src.validate_data import audit_dataset
 from src.validate_target import audit_target_columns
 
@@ -27,7 +28,7 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("dataset", help="Print the dataset shape and first five rows.")
-    subparsers.add_parser("audit", help="Print target and data-quality audit reports.")
+    subparsers.add_parser("audit", help="Print target, data-quality, and leakage audit reports.")
 
     train_parser = subparsers.add_parser(
         "train", help="Run leakage-safe cross-validated baseline model comparison."
@@ -88,6 +89,8 @@ def main() -> None:
         print(json.dumps(audit_target_columns(df), indent=2, ensure_ascii=False))
         print("\n=== Data quality audit ===")
         print(json.dumps(audit_dataset(df), indent=2, ensure_ascii=False))
+        print("\n=== Leakage and feature timing audit ===")
+        print(json.dumps(audit_feature_leakage(df), indent=2, ensure_ascii=False))
         return
 
     if command == "train":
