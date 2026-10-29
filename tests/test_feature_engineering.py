@@ -75,10 +75,10 @@ class FeatureEngineeringTests(unittest.TestCase):
         self.assertNotIn("future_churn_label", features.columns)
         self.assertEqual(len(features.columns), len(raw.columns) - 1 + 4)
 
-    def test_rejects_invalid_state(self) -> None:
+    def test_rejects_invalid_state_next_month(self) -> None:
         df = sample_frame()
-        df.loc[0, "State"] = "Unknown"
-        with self.assertRaisesRegex(ValueError, "Invalid State target"):
+        df.loc[0, "StateNextMonth"] = "Unknown"
+        with self.assertRaisesRegex(ValueError, "Invalid StateNextMonth target"):
             engineer_features(df)
 
     def test_rejects_missing_required_feature(self) -> None:
