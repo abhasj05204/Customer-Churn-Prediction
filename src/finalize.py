@@ -13,7 +13,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
-from sklearn.model_selection import train_test_split
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_test_split
 from xgboost import XGBClassifier
 
 from src.evaluate import evaluate_calibration, evaluate_model, evaluate_predictions
@@ -121,6 +122,98 @@ def select_f1_threshold(
     }
 
 
+
+def compare_calibration_methods(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    estimator: Any,
+    n_splits: int = 5,
+    random_state: int = 42,
+) -> tuple[str, dict[str, Any]]:
+    """Compare raw, sigmoid, and isotonic probabilities using training-only OOF predictions.
+
+    Calibrator selection uses out-of-fold probabilities from the model-training
+    partition. The separate threshold-validation split is not used to choose the
+    calibration method or fit the calibrator.
+    """
+    if y_train.nunique() != 2:
+        raise ValueError("Calibration comparison requires both target classes.")
+    if n_splits < 2 or int(y_train.value_counts().min()) < n_splits:
+        raise ValueError("n_splits must be at least 2 and no greater than the smallest class count.")
+
+    outer_cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    inner_cv = min(3, int(y_train.value_counts().min()))
+    candidates: dict[str, Any] = {
+        "none": build_model_pipeline(X_train, clone(estimator)),
+        "sigmoid": CalibratedClassifierCV(
+            estimator=build_model_pipeline(X_train, clone(estimator)),
+            method="sigmoid",
+            cv=inner_cv,
+            ensemble=False,
+        ),
+        "isotonic": CalibratedClassifierCV(
+            estimator=build_model_pipeline(X_train, clone(estimator)),
+            method="isotonic",
+            cv=inner_cv,
+            ensemble=False,
+        ),
+    }
+
+    comparisons: dict[str, Any] = {}
+    for method, candidate in candidates.items():
+        oof_probability = cross_val_predict(
+            candidate,
+            X_train,
+            y_train,
+            cv=outer_cv,
+            method="predict_proba",
+            n_jobs=1,
+        )[:, 1]
+        calibration = evaluate_calibration(y_train, oof_probability, n_bins=10)
+        comparisons[method] = {
+            "brier_score": calibration["brier_score"],
+            "log_loss": calibration["log_loss"],
+            "expected_calibration_error": calibration["expected_calibration_error"],
+            "maximum_calibration_error": calibration["maximum_calibration_error"],
+            "n_bins_nonempty": calibration["n_bins_nonempty"],
+            "oof_sample_count": calibration["sample_count"],
+        }
+
+    raw = comparisons["none"]
+    improving = [
+        method for method in ("sigmoid", "isotonic")
+        if comparisons[method]["log_loss"] < raw["log_loss"]
+        and comparisons[method]["brier_score"] < raw["brier_score"]
+    ]
+    selected_method = (
+        min(
+            improving,
+            key=lambda method: (
+                comparisons[method]["log_loss"],
+                comparisons[method]["brier_score"],
+                comparisons[method]["expected_calibration_error"],
+            ),
+        )
+        if improving
+        else "none"
+    )
+    return selected_method, {
+        "selection_data": "training-only out-of-fold probabilities from X_model",
+        "selection_rule": (
+            "Choose the calibrated method with lowest OOF log loss among methods that "
+            "improve both log loss and Brier score over uncalibrated probabilities; otherwise none."
+        ),
+        "inner_calibration_folds": inner_cv,
+        "outer_oof_folds": n_splits,
+        "selected_method": selected_method,
+        "candidate_metrics": comparisons,
+        "warning": (
+            "This selection is based on training-only OOF estimates. The separate "
+            "threshold-validation split is reserved for threshold selection."
+        ),
+    }
+
+
 def run_final_evaluation(
     csv_path: Path = DEFAULT_DATA,
     output_dir: Path | None = None,
@@ -176,8 +269,25 @@ def run_final_evaluation(
     else:
         selected_estimator = candidate_estimators(random_state=random_state)[selected_name]
 
-    # Fit only on model-training data to choose threshold on a separate validation split.
-    threshold_model = build_model_pipeline(X_model, clone(selected_estimator))
+    selected_calibration, calibration_selection_report = compare_calibration_methods(
+        X_model,
+        y_model,
+        selected_estimator,
+        n_splits=n_splits,
+        random_state=random_state + 2,
+    )
+
+    # Fit the selected probability method on model-training rows, then choose the
+    # threshold from the entirely separate threshold-validation split.
+    if selected_calibration == "none":
+        threshold_model = build_model_pipeline(X_model, clone(selected_estimator))
+    else:
+        threshold_model = CalibratedClassifierCV(
+            estimator=build_model_pipeline(X_model, clone(selected_estimator)),
+            method=selected_calibration,
+            cv=n_splits,
+            ensemble=False,
+        )
     threshold_model.fit(X_model, y_model)
     validation_probabilities = threshold_model.predict_proba(X_threshold)[:, 1]
     calibration_report = evaluate_calibration(
@@ -187,8 +297,16 @@ def run_final_evaluation(
         y_threshold, validation_probabilities
     )
 
-    # After model and threshold selection are frozen, refit on all development data.
-    final_pipeline = build_model_pipeline(X_development, clone(selected_estimator))
+    # Freeze model/calibration/threshold, then refit on all development rows.
+    if selected_calibration == "none":
+        final_pipeline = build_model_pipeline(X_development, clone(selected_estimator))
+    else:
+        final_pipeline = CalibratedClassifierCV(
+            estimator=build_model_pipeline(X_development, clone(selected_estimator)),
+            method=selected_calibration,
+            cv=n_splits,
+            ensemble=False,
+        )
     final_pipeline.fit(X_development, y_development)
     holdout_report = evaluate_model(
         final_pipeline, X_test, y_test, threshold=chosen_threshold
@@ -227,16 +345,17 @@ def run_final_evaluation(
         },
         "model_selection": selection_report,
         "threshold_selection": threshold_report,
+        "calibration_method_selection": calibration_selection_report,
+        "selected_calibration_method": selected_calibration,
         "probability_calibration_on_threshold_validation": calibration_report,
-        "calibration_decision": (
-            "Diagnostics are reported for review; no calibration layer is applied automatically."
-        ),
         "final_model": selected_name,
         "final_threshold": float(chosen_threshold),
         "holdout_test_evaluation": holdout_report,
         "methodology": {
             "holdout_used_for_selection": False,
             "preprocessing_fit_inside_cv": True,
+            "calibration_method_selected_on_training_only_oof_predictions": True,
+            "calibrator_fitted_on_model_training_split": True,
             "threshold_selected_on_separate_validation_split": True,
             "resampling": "none",
             "threshold_objective": "validation F1; ties use recall then distance from 0.5",
