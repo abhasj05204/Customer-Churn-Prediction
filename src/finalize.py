@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
 from src.evaluate import evaluate_calibration, evaluate_model, evaluate_predictions
+from src.experiment_metadata import collect_environment_metadata
 from src.feature_engineering import engineer_features, split_features_target
 from src.optimize import tune_xgb_params
 from src.preprocess import build_model_pipeline
@@ -194,6 +195,7 @@ def run_final_evaluation(
     )
 
     report: dict[str, Any] = {
+        "environment": collect_environment_metadata(),
         "dataset": {
             "path": str(csv_path),
             "sha256": dataset_sha256,
