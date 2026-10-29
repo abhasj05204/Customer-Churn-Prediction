@@ -146,7 +146,7 @@ def run_baseline_experiment(
             "test_rows": int(len(X_test)),
             "cross_validation_folds": int(n_splits),
         },
-        "selection_rule": "highest mean training-only 5-fold ROC-AUC",
+        "selection_rule": f"highest mean training-only {n_splits}-fold ROC-AUC",
         "cross_validation": cv_results,
         "selected_model": selected_name,
         "holdout_test_evaluation": test_result,
@@ -159,15 +159,16 @@ def run_baseline_experiment(
 
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
-        (output_dir / "baseline_evaluation.json").write_text(
+        report_path = output_dir / "baseline_evaluation.json"
+        model_path = output_dir / "baseline_pipeline.joblib"
+        result["saved_model_path"] = str(model_path)
+        result["saved_report_path"] = str(report_path)
+        report_path.write_text(
             json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
-        model_path = output_dir / "baseline_pipeline.joblib"
         import joblib
 
         joblib.dump(selected_pipeline, model_path)
-        result["saved_model_path"] = str(model_path)
-        result["saved_report_path"] = str(output_dir / "baseline_evaluation.json")
 
     return result
 
