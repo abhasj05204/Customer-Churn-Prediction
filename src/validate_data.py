@@ -13,13 +13,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-EXPECTED_COLUMNS = (
-    "customerID", "gender", "SeniorCitizen", "Partner", "Dependents", "tenure",
-    "PhoneService", "MultipleLines", "InternetService", "OnlineSecurity",
-    "OnlineBackup", "DeviceProtection", "TechSupport", "StreamingTV",
-    "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
-    "MonthlyCharges", "TotalCharges", "State",
-)
+from src.feature_engineering import REQUIRED_INPUT_COLUMNS
+
+# Keep validation and the training/inference contract synchronized.
+EXPECTED_COLUMNS = REQUIRED_INPUT_COLUMNS
 REQUIRED_COLUMNS = ("customerID", "State")
 NUMERIC_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
 NONNEGATIVE_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
