@@ -178,7 +178,7 @@ function ResultPanel({ result, onReset }) {
           </div>
           <div className="result-note">
             <Icon name="alert" size={15} />
-            <span>This model classifies the dataset's <strong>State</strong> label. It is not validated as a next-month churn forecast.</span>
+            <span>This model classifies the supplied <strong>StateNextMonth</strong> label. Its source and temporal alignment have not been independently verified.</span>
           </div>
         </div>
       </div>
@@ -336,7 +336,7 @@ export default function App() {
           </article>
           <article className="stat-card">
             <span className="stat-icon peach"><Icon name="shield" size={18} /></span>
-            <div><span className="stat-label">Prediction target</span><strong>State <small>label</small></strong><span className="stat-note">Not a verified future forecast</span></div>
+            <div><span className="stat-label">Prediction target</span><strong>StateNextMonth <small>label</small></strong><span className="stat-note">Label provenance unverified</span></div>
           </article>
         </section>
 
@@ -389,7 +389,7 @@ export default function App() {
               <div className="snapshot-meter"><span style={{ width: `${(serviceCount / 8) * 100}%` }} /></div>
               <p>Based on the current form, {serviceCount} of 8 service indicators are marked “Yes”. This is descriptive only, not a separate risk score.</p>
             </div>
-            <div className="methodology-note"><Icon name="alert" size={16} /><p><strong>Interpret results carefully.</strong> The model predicts the dataset's State label. It has not been established as a next-month churn forecast.</p></div>
+            <div className="methodology-note"><Icon name="alert" size={16} /><p><strong>Interpret results carefully.</strong> The model predicts the supplied StateNextMonth label. Its source and temporal alignment have not been independently verified.</p></div>
           </aside>
         </div>
 
