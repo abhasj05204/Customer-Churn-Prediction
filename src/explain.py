@@ -106,12 +106,17 @@ def make_encoded_probability_predictor(
             raise ValueError(
                 f"Expected encoded rows with {len(feature_names)} columns; got shape {values.shape}."
             )
-        probabilities = np.asarray(estimator.predict_proba(values), dtype=float)
-        if probabilities.ndim != 2 or probabilities.shape[1] < 2:
-            raise ValueError("Underlying estimator must return positive-class probabilities.")
-        result = probabilities[:, 1]
-        if calibrator is not None:
-            result = np.asarray(calibrator.predict(result), dtype=float)
+        if calibrator is not None and hasattr(estimator, "decision_function"):
+            # sklearn calibrates decision_function scores when the estimator exposes one.
+            raw_scores = np.asarray(estimator.decision_function(values), dtype=float).reshape(-1)
+            result = np.asarray(calibrator.predict(raw_scores), dtype=float)
+        else:
+            probabilities = np.asarray(estimator.predict_proba(values), dtype=float)
+            if probabilities.ndim != 2 or probabilities.shape[1] < 2:
+                raise ValueError("Underlying estimator must return positive-class probabilities.")
+            result = probabilities[:, 1]
+            if calibrator is not None:
+                result = np.asarray(calibrator.predict(result), dtype=float)
         result = np.asarray(result, dtype=float)
         if not np.isfinite(result).all() or ((result < 0) | (result > 1)).any():
             raise ValueError("Model returned invalid positive-class probabilities.")
