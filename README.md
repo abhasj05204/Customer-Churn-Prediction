@@ -37,6 +37,8 @@ Customer-Churn-Prediction/
 │   └── telco_churn.csv
 ├── notebooks/
 │   └── EDA.ipynb
+├── api/
+│   └── app.py
 ├── src/
 │   ├── validate_target.py
 │   ├── validate_data.py
@@ -59,7 +61,8 @@ Customer-Churn-Prediction/
 │   ├── test_train.py
 │   ├── test_optimize.py
 │   ├── test_finalize.py
-│   └── test_explain.py
+│   ├── test_explain.py
+│   └── test_api.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
@@ -148,6 +151,23 @@ python -m src.explain --model outputs/final_pipeline.joblib --output-dir outputs
 This command does not use the holdout rows for explanations. It writes `shap_global_importance.csv`, `shap_local_explanations.csv`, `shap_global_bar.png`, `shap_beeswarm.png`, and a JSON report. SHAP values describe model associations; they do not prove causation.
 
 Equivalent top-level command: `python main.py explain`.
+
+## Run the prediction API
+
+First create a final model and threshold report using the final evaluation command above. Then start the API from the repository root:
+
+~~~bash
+uvicorn api.app:app --reload
+~~~
+
+Open `http://127.0.0.1:8000/docs` to try the interactive API. Endpoints:
+
+- `GET /health` — checks whether a model artifact is loaded.
+- `GET /model-info` — returns model/target information and selected threshold.
+- `POST /predict` — predicts the State label for one customer.
+- `POST /predict/batch` — predicts up to 100 customers per request.
+
+The API validates categorical values, rejects unknown fields such as `State` and `customerID`, and uses the same inference-time feature-engineering module as model training. If the final model file is not present, the service health endpoint returns a degraded state and predictions return HTTP 503 until `python -m src.finalize --output-dir outputs` has been run.
 
 ## Run the existing notebook
 
