@@ -29,6 +29,7 @@ See:
 - [Data quality audit](docs/DATA_QUALITY.md)
 - [Structural leakage and feature-timing audit](docs/LEAKAGE_AUDIT.md)
 - [Feature engineering and preprocessing](docs/FEATURE_ENGINEERING.md)
+- [Imbalance strategy comparison](docs/IMBALANCE_COMPARISON.md)
 - [Exploratory CV experiment report](docs/CV_EXPERIMENTS.md)
 
 ## Repository structure
@@ -60,6 +61,7 @@ Customer-Churn-Prediction/
 │   ├── evaluate.py
 │   ├── train.py
 │   ├── optimize.py
+│   ├── compare_imbalance.py
 │   ├── finalize.py
 │   └── explain.py
 ├── models/               # Saved artifacts (ignored by Git by default)
@@ -74,6 +76,7 @@ Customer-Churn-Prediction/
 │   ├── test_evaluate.py
 │   ├── test_train.py
 │   ├── test_optimize.py
+│   ├── test_imbalance_pipelines.py
 │   ├── test_finalize.py
 │   ├── test_explain.py
 │   └── test_api.py
@@ -83,6 +86,7 @@ Customer-Churn-Prediction/
 │   ├── DATA_QUALITY.md
 │   ├── LEAKAGE_AUDIT.md
 │   ├── FEATURE_ENGINEERING.md
+│   ├── IMBALANCE_COMPARISON.md
 │   └── CV_EXPERIMENTS.md
 ├── requirements.txt
 ├── .github/workflows/
@@ -136,6 +140,16 @@ python -m src.train --output-dir outputs
 ~~~
 
 The script compares balanced Logistic Regression, balanced Random Forest, and unresampled XGBoost using training-only cross-validation, selects by mean CV ROC-AUC, fits that baseline on the training portion, and deliberately leaves holdout metrics unevaluated. It saves a local JSON report and joblib model under the chosen output directory. The model artifact is ignored by Git. The holdout is reserved for final evaluation after model and threshold selection.
+
+## Compare imbalance strategies
+
+This experiment compares plain Logistic Regression, class weighting, ordinary SMOTE (experimental) and SMOTENC using the same training-only stratified CV folds. All imputing/encoding/sampling is fit only within each CV training fold; the outer holdout remains unscored.
+
+~~~bash
+python -m src.compare_imbalance --folds 5 --output-dir outputs
+~~~
+
+The report is saved to `outputs/imbalance_comparison.json`. SMOTE-after-one-hot is included only as a measured comparison; SMOTENC keeps categorical features valid through sampling. See [docs/IMBALANCE_COMPARISON.md](docs/IMBALANCE_COMPARISON.md) for the protocol.
 
 ## Run Optuna tuning
 
