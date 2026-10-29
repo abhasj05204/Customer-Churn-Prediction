@@ -1,6 +1,6 @@
 # Customer Churn Prediction
 
-A machine-learning project exploring churn classification in a Telco-style dataset. The repository includes the exploratory notebook, reusable feature-engineering and preprocessing modules, a cross-validated baseline trainer, data audits, and unit tests. Explainability, hyperparameter optimization in the corrected pipeline, prediction API, frontend, and deployment remain planned work.
+A machine-learning project exploring churn classification in a Telco-style dataset. The repository includes the EDA notebook, reusable feature engineering and preprocessing, leakage-safe cross-validation and Optuna workflows, threshold selection, SHAP explainability, a FastAPI prediction service, a React frontend, data audits, tests, and GitHub Actions. Hosted production deployment and monitoring remain to be configured.
 
 ## Current dataset
 
@@ -21,7 +21,7 @@ This selected dataset does not contain StateNextMonth. The project therefore cur
 
 The notebook includes EDA and the original modelling experiment. Shared modules now provide feature engineering, leakage-safe preprocessing pipelines, binary evaluation helpers, target/data audits, and a training-only stratified cross-validation baseline runner. The selected model is chosen by mean cross-validation ROC-AUC; the holdout set is intentionally not scored during selection. The original notebook metrics are historical baseline results, not production-validated performance.
 
-A GitHub Actions workflow (`.github/workflows/ci.yml`) has been added to install dependencies, run unit tests, and execute the dataset audits on pushes and pull requests.
+A GitHub Actions workflow (`.github/workflows/ci.yml`) installs Python dependencies, runs unit tests, and executes dataset audits. A second workflow (`.github/workflows/frontend-ci.yml`) builds the React frontend on frontend changes.
 
 See:
 - [Project baseline and historical metrics](docs/PROJECT_BASELINE.md)
@@ -38,7 +38,16 @@ Customer-Churn-Prediction/
 ├── notebooks/
 │   └── EDA.ipynb
 ├── api/
+│   ├── __init__.py
 │   └── app.py
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── index.html
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       └── styles.css
 ├── src/
 │   ├── validate_target.py
 │   ├── validate_data.py
@@ -68,6 +77,9 @@ Customer-Churn-Prediction/
 │   ├── TARGET_VALIDATION.md
 │   └── DATA_QUALITY.md
 ├── requirements.txt
+├── .github/workflows/
+│   ├── ci.yml
+│   └── frontend-ci.yml
 ├── README.md
 └── main.py
 ~~~
@@ -169,6 +181,21 @@ Open `http://127.0.0.1:8000/docs` to try the interactive API. Endpoints:
 
 The API validates categorical values, rejects unknown fields such as `State` and `customerID`, and uses the same inference-time feature-engineering module as model training. If the final model file is not present, the service health endpoint returns a degraded state and predictions return HTTP 503 until `python -m src.finalize --output-dir outputs` has been run.
 
+## Run the React frontend
+
+Use Node.js 22.12 or newer compatible with the pinned Vite release. In a second terminal, with the FastAPI backend running on port 8000:
+
+~~~powershell
+cd frontend
+npm install
+Copy-Item .env.example .env
+npm run dev
+~~~
+
+The frontend is available at `http://127.0.0.1:5173`. Set `VITE_API_BASE_URL` in `frontend/.env` if the API is running elsewhere. The backend allows local Vite origins by default; configure `CHURN_CORS_ORIGINS` with comma-separated exact origins for another deployment. Do not put API keys or secrets in `VITE_*` variables because frontend variables are bundled into browser code.
+
+The dashboard sends customer inputs to `POST /predict`, displays the returned probability and chosen threshold, and makes no prediction when the API/model is unavailable. It clearly labels the current target as `State` classification, not verified next-month churn.
+
 ## Run the existing notebook
 
 Start Jupyter from the notebooks directory so its relative data path resolves:
@@ -199,8 +226,8 @@ The old Optuna validation score must not be treated as an unbiased generalizatio
 3. Run and verify the cross-validated baseline in a clean environment; compare class-weighted models against no-resampling alternatives.
 4. Run Optuna tuning and compare its cross-validation results with the Logistic Regression baseline; assess class-weighting and categorical-aware imbalance handling. A finalization command now uses a separate threshold-validation split and a one-standard-error model-selection rule.
 5. Use validation predictions to choose the decision threshold and reserve the holdout test for final evaluation. The `src.finalize` orchestration implements this workflow.
-6. Add model explainability, business insights, and production-facing inference modules.
-7. Add API, frontend, end-to-end prediction tests, monitoring hooks, and deployment.
+6. Add model explainability, business insights, and production-facing inference modules. (SHAP module is implemented.)
+7. Harden model/API integration with end-to-end smoke tests, add business insight reporting, configure deployment, and document monitoring/retraining.
 
 ## Notes
 
