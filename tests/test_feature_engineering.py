@@ -3,7 +3,7 @@ import unittest
 
 import pandas as pd
 
-from src.feature_engineering import engineer_features, split_features_target
+from src.feature_engineering import engineer_features, engineer_inference_features, split_features_target
 
 
 def sample_frame() -> pd.DataFrame:
@@ -56,6 +56,16 @@ class FeatureEngineeringTests(unittest.TestCase):
         self.assertNotIn("StateNextMonth", X.columns)
         self.assertEqual(y.tolist(), [1, 0])
         self.assertEqual(len(X), len(y))
+
+
+    def test_inference_features_do_not_require_target(self) -> None:
+        raw = sample_frame().drop(columns=["customerID", "State", "StateNextMonth"])
+        features = engineer_inference_features(raw)
+        self.assertNotIn("State", features.columns)
+        self.assertNotIn("customerID", features.columns)
+        self.assertEqual(len(features), 2)
+        self.assertIn("TenureGroup", features.columns)
+        self.assertIn("AvgMonthlyCharges", features.columns)
 
     def test_rejects_invalid_state(self) -> None:
         df = sample_frame()
