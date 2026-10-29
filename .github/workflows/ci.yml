@@ -64,3 +64,4 @@ jobs:
         run: |
           python -m src.validate_target
           python -m src.validate_data
+          python -m src.audit_leakage
