@@ -55,6 +55,14 @@ def audit_feature_leakage(df: pd.DataFrame) -> dict[str, Any]:
     temporal_columns_missing = [
         column for column in TEMPORAL_METADATA_COLUMNS if column not in df.columns
     ]
+    allowed_source_columns = (
+        set(RAW_FEATURE_COLUMNS)
+        | BLOCKED_PREDICTOR_COLUMNS
+        | set(TEMPORAL_METADATA_COLUMNS)
+    )
+    unexpected_source_columns = sorted(
+        str(column) for column in df.columns if column not in allowed_source_columns
+    )
 
     target_values = df[TARGET_COLUMN].astype("string").str.strip()
     target_labels = sorted(str(value) for value in target_values.dropna().unique())
@@ -67,7 +75,12 @@ def audit_feature_leakage(df: pd.DataFrame) -> dict[str, Any]:
     target_missing = int(target_values.isna().sum())
 
     state_next_month_in_file = "StateNextMonth" in df.columns
-    structural_pass = not blocked_in_predictors and not unknown_target_values and target_missing == 0
+    structural_pass = (
+        not blocked_in_predictors
+        and not unknown_target_values
+        and target_missing == 0
+        and not unexpected_source_columns
+    )
     timing_verified = bool(temporal_columns_present) and not temporal_columns_missing
 
     return {
@@ -84,13 +97,14 @@ def audit_feature_leakage(df: pd.DataFrame) -> dict[str, Any]:
         "predictor_columns": predictor_columns,
         "blocked_columns_present_in_source": blocked_present,
         "blocked_columns_in_predictor_frame": blocked_in_predictors,
+        "unexpected_source_columns": unexpected_source_columns,
         "state_next_month_present_in_source": state_next_month_in_file,
         "structural_leakage_check": {
             "status": "pass" if structural_pass else "fail",
             "meaning": (
                 "Known identifier/target columns are excluded from the model feature frame."
                 if structural_pass
-                else "At least one known target/identifier column or invalid target label needs review."
+                else "A blocked column entered predictors, target labels are invalid/missing, or unexpected source columns need explicit review."
             ),
         },
         "feature_timing_check": {
@@ -108,7 +122,12 @@ def audit_feature_leakage(df: pd.DataFrame) -> dict[str, Any]:
                 "StateNextMonth is not present; this dataset cannot directly train or validate "
                 "a next-month outcome."
                 if not state_next_month_in_file
-                else "StateNextMonth exists in the source, but it is still excluded from predictors and its semantics require provenance."
+                else "StateNextMonth exists in the source, but it is excluded from predictors and its semantics require provenance."
+            ),
+            (
+                f"Unexpected source columns require explicit review: {unexpected_source_columns}"
+                if unexpected_source_columns
+                else "Source columns match the declared schema plus known labels/metadata."
             ),
             (
                 "Target/identifier columns are excluded by the shared inference feature builder."
