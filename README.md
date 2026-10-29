@@ -27,6 +27,7 @@ See:
 - [Project baseline and historical metrics](docs/PROJECT_BASELINE.md)
 - [Target validation findings](docs/TARGET_VALIDATION.md)
 - [Data quality audit](docs/DATA_QUALITY.md)
+- [Exploratory CV experiment report](docs/CV_EXPERIMENTS.md)
 
 ## Repository structure
 
