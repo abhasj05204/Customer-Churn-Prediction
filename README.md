@@ -27,6 +27,7 @@ See:
 - [Project baseline and historical metrics](docs/PROJECT_BASELINE.md)
 - [Target validation findings](docs/TARGET_VALIDATION.md)
 - [Data quality audit](docs/DATA_QUALITY.md)
+- [Structural leakage and feature-timing audit](docs/LEAKAGE_AUDIT.md)
 - [Exploratory CV experiment report](docs/CV_EXPERIMENTS.md)
 
 ## Repository structure
@@ -52,6 +53,7 @@ Customer-Churn-Prediction/
 │   ├── __init__.py
 │   ├── validate_target.py
 │   ├── validate_data.py
+│   ├── audit_leakage.py
 │   ├── feature_engineering.py
 │   ├── preprocess.py
 │   ├── evaluate.py
@@ -65,6 +67,7 @@ Customer-Churn-Prediction/
 ├── tests/
 │   ├── test_target_validation.py
 │   ├── test_data_validation.py
+│   ├── test_leakage_audit.py
 │   ├── test_feature_engineering.py
 │   ├── test_preprocess.py
 │   ├── test_evaluate.py
@@ -77,6 +80,7 @@ Customer-Churn-Prediction/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
 │   ├── DATA_QUALITY.md
+│   ├── LEAKAGE_AUDIT.md
 │   └── CV_EXPERIMENTS.md
 ├── requirements.txt
 ├── .github/workflows/
@@ -115,10 +119,11 @@ From the repository root:
 ~~~bash
 python -m src.validate_target
 python -m src.validate_data
+python -m src.audit_leakage
 python -m unittest discover -s tests -v
 ~~~
 
-The target audit reports the label distribution, row/column counts, customer ID duplication, and whether a separate next-month target exists. It does not infer a prediction horizon from a column name.
+The target audit reports label distribution and target availability; the data audit checks schema and value quality; the leakage audit verifies known target/identifier fields are excluded from predictors and flags missing temporal provenance. None invents a future target or claims a prediction horizon that the data cannot support.
 
 ## Run baseline cross-validated model comparison
 
