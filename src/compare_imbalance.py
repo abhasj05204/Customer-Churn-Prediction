@@ -115,7 +115,7 @@ def run_imbalance_experiment(
             "path": str(csv_path),
             "sha256": dataset_sha256,
             "rows": int(len(raw_df)),
-            "target_column": "State",
+            "target_column": "StateNextMonth",
         },
         "split": {
             "random_state": int(random_state),
@@ -134,7 +134,7 @@ def run_imbalance_experiment(
         "cross_validation": results,
         "warning": (
             "Scores are training-only CV estimates, not final holdout results. "
-            "The target is State, not a verified next-month outcome."
+            "StateNextMonth is the supplied target; label provenance and temporal alignment remain unverified."
         ),
     }
     if output_dir is not None:
