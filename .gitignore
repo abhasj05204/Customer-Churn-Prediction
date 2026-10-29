@@ -43,3 +43,8 @@ reports/figures/*
 
 # Local experiment reports and fitted pipelines
 /outputs/
+
+# JavaScript dependencies and build output
+node_modules/
+frontend/node_modules/
+frontend/dist/
