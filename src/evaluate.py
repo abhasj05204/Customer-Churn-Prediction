@@ -10,6 +10,7 @@ from sklearn.metrics import (
     brier_score_loss,
     confusion_matrix,
     f1_score,
+    log_loss,
     precision_score,
     recall_score,
     roc_auc_score,
@@ -61,3 +62,61 @@ def evaluate_model(model: Any, X: Any, y_true: Any, threshold: float = 0.5) -> d
     if probabilities.ndim != 2 or probabilities.shape[1] < 2:
         raise ValueError("predict_proba must return an array with a positive-class column.")
     return evaluate_predictions(y_true, probabilities[:, 1], threshold=threshold)
+
+
+def evaluate_calibration(
+    y_true: Any,
+    y_probability: Any,
+    n_bins: int = 10,
+) -> dict[str, Any]:
+    """Summarize probability calibration on a separate validation sample."""
+    y = np.asarray(y_true).reshape(-1)
+    probability = np.asarray(y_probability, dtype=float).reshape(-1)
+    if len(y) == 0 or len(y) != len(probability):
+        raise ValueError("y_true and y_probability must have the same non-zero length.")
+    if not np.isin(y, [0, 1]).all():
+        raise ValueError("y_true must contain only binary labels 0 and 1.")
+    if not np.isfinite(probability).all() or ((probability < 0) | (probability > 1)).any():
+        raise ValueError("y_probability must contain finite values between 0 and 1.")
+    if n_bins < 2:
+        raise ValueError("n_bins must be at least 2.")
+
+    bin_ids = np.minimum((probability * n_bins).astype(int), n_bins - 1)
+    bins = []
+    expected_calibration_error = 0.0
+    max_calibration_error = 0.0
+    for bin_index in range(n_bins):
+        mask = bin_ids == bin_index
+        count = int(mask.sum())
+        if count == 0:
+            continue
+        mean_probability = float(probability[mask].mean())
+        observed_rate = float(y[mask].mean())
+        calibration_error = abs(mean_probability - observed_rate)
+        expected_calibration_error += (count / len(y)) * calibration_error
+        max_calibration_error = max(max_calibration_error, calibration_error)
+        bins.append(
+            {
+                "bin": bin_index,
+                "count": count,
+                "mean_probability": mean_probability,
+                "observed_positive_rate": observed_rate,
+                "absolute_calibration_error": calibration_error,
+            }
+        )
+
+    return {
+        "sample_count": int(len(y)),
+        "brier_score": float(brier_score_loss(y, probability)),
+        "log_loss": float(log_loss(y, probability, labels=[0, 1])),
+        "expected_calibration_error": float(expected_calibration_error),
+        "maximum_calibration_error": float(max_calibration_error),
+        "n_bins_requested": int(n_bins),
+        "n_bins_nonempty": int(len(bins)),
+        "reliability_bins": bins,
+        "interpretation": (
+            "Diagnostics are computed on the supplied validation sample. Lower Brier/log loss/ECE "
+            "are generally preferable, but these estimates are sample-dependent and do not prove "
+            "perfect calibration."
+        ),
+    }
