@@ -12,7 +12,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_validate
 
-from src.evaluate import evaluate_model
 from src.feature_engineering import engineer_features, split_features_target
 from src.preprocess import build_model_pipeline
 
@@ -128,7 +127,6 @@ def run_baseline_experiment(
     )
     selected_name, selected_pipeline = next(iter(selected.items()))
     selected_pipeline.fit(X_train, y_train)
-    test_result = evaluate_model(selected_pipeline, X_test, y_test, threshold=0.5)
 
     result: dict[str, Any] = {
         "dataset": {
@@ -149,11 +147,16 @@ def run_baseline_experiment(
         "selection_rule": f"highest mean training-only {n_splits}-fold ROC-AUC",
         "cross_validation": cv_results,
         "selected_model": selected_name,
-        "holdout_test_evaluation": test_result,
+        "holdout_test": {
+            "rows": int(len(X_test)),
+            "metrics_evaluated": False,
+            "status": "reserved for final evaluation after model and threshold selection",
+        },
         "warning": (
-            "This experiment classifies the dataset State label. The dataset has no "
-            "StateNextMonth column or documented temporal outcome, so results do not "
-            "establish future/next-month churn prediction."
+            "This experiment selects a baseline using training-only cross-validation and "
+            "does not calculate holdout metrics. It classifies the dataset State label; "
+            "the dataset has no StateNextMonth column or documented temporal outcome, "
+            "so results do not establish future/next-month churn prediction."
         ),
     }
 
