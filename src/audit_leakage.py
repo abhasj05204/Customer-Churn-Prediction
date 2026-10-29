@@ -17,7 +17,7 @@ from src.feature_engineering import (
     engineer_inference_features,
 )
 
-TARGET_COLUMN = "State"
+TARGET_COLUMN = "StateNextMonth"
 BLOCKED_PREDICTOR_COLUMNS = {
     "customerID",
     "State",
@@ -118,8 +118,7 @@ def audit_feature_leakage(df: pd.DataFrame) -> dict[str, Any]:
         },
         "warnings": [
             (
-                "StateNextMonth is not present; this dataset cannot directly train or validate "
-                "a next-month outcome."
+                "StateNextMonth is present as the supplied target, but its provenance and temporal alignment are unverified."
                 if not state_next_month_in_file
                 else "StateNextMonth exists in the source, but it is excluded from predictors and its semantics require provenance."
             ),
@@ -129,7 +128,7 @@ def audit_feature_leakage(df: pd.DataFrame) -> dict[str, Any]:
                 else "Source columns match the declared schema plus known labels/metadata."
             ),
             (
-                "Target/identifier columns are excluded by the shared inference feature builder."
+                "State and StateNextMonth target columns plus customerID are excluded by the shared inference feature builder."
                 if not blocked_in_predictors
                 else f"Blocked columns found in engineered predictors: {blocked_in_predictors}"
             ),
