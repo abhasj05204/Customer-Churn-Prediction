@@ -156,9 +156,8 @@ def run_baseline_experiment(
         },
         "warning": (
             "This experiment selects a baseline using training-only cross-validation and "
-            "does not calculate holdout metrics. It classifies the dataset State label; "
-            "StateNextMonth is the supplied target, but its real-world provenance and temporal alignment "
-            "have not been independently verified."
+            "does not calculate holdout metrics. StateNextMonth is the supplied target, but its "
+            "real-world provenance and temporal alignment have not been independently verified."
         ),
     }
 
