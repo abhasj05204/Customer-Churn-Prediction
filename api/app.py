@@ -10,6 +10,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.feature_engineering import engineer_inference_features
@@ -109,6 +110,22 @@ def create_app(
     application.state.model_path = str(resolved_model_path)
     application.state.threshold = chosen_threshold
     application.state.model_name = _model_name(loaded_model) if loaded_model is not None else None
+
+    allowed_origins = [
+        origin.strip()
+        for origin in os.getenv(
+            "CHURN_CORS_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",")
+        if origin.strip()
+    ]
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
 
     @application.get("/health")
     def health() -> dict[str, object]:
