@@ -86,6 +86,7 @@ Customer-Churn-Prediction/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
 │   ├── DATA_QUALITY.md
+│   ├── FINAL_EVALUATION.md
 │   ├── LEAKAGE_AUDIT.md
 │   ├── FEATURE_ENGINEERING.md
 │   ├── IMBALANCE_COMPARISON.md
@@ -95,7 +96,8 @@ Customer-Churn-Prediction/
 ├── requirements.txt
 ├── .github/workflows/
 │   ├── ci.yml
-│   └── frontend-ci.yml
+│   ├── frontend-ci.yml
+│   └── model-validation.yml
 ├── README.md
 └── main.py
 ~~~
@@ -175,9 +177,19 @@ This is the end-to-end modelling evaluation command. It compares baseline models
 python -m src.finalize --trials 30 --folds 5 --output-dir outputs
 ~~~
 
-The command writes `outputs/final_evaluation.json` and `outputs/final_pipeline.joblib`. Review the selected model, threshold-validation metrics, Brier/log-loss/ECE calibration diagnostics, final holdout metrics, and confusion counts in the JSON report. Calibration diagnostics use only the separate validation split; the code does not apply calibration automatically. The holdout is not used to choose the model or threshold.
+The command writes `outputs/final_evaluation.json` and `outputs/final_pipeline.joblib`. It compares raw, sigmoid and isotonic calibration via training-only out-of-fold predictions, selects a calibration method only when log loss and Brier score both improve, then selects the decision threshold on a separate validation split. It evaluates the final holdout only after model/calibration/threshold selection. Latest pinned-environment metrics are documented in [FINAL_EVALUATION.md](docs/FINAL_EVALUATION.md).
 
 Equivalent top-level command: `python main.py finalize --trials 30`.
+
+## Smoke-test the saved model and API
+
+After finalization has created the local artifact, verify single and batch predictions through the actual FastAPI application:
+
+~~~bash
+python -m src.smoke_test --model outputs/final_pipeline.joblib --report outputs/final_evaluation.json
+~~~
+
+The smoke test selects two real feature rows, removes `customerID` and `State`, loads the saved model and chosen threshold, then calls `/predict` and `/predict/batch` through FastAPI's test client. The model-validation GitHub Actions workflow runs this check automatically and then generates SHAP reports before uploading the artifacts.
 
 ## Run SHAP explainability
 
