@@ -227,7 +227,7 @@ def run_shap_explanations(
     report_path = output_dir / "shap_report.json"
     report = {
         "dataset_sha256": dataset_sha256,
-        "target_column": "State",
+        "target_column": "StateNextMonth",
         "model_path": str(model_path),
         "rows_in_development_partition": int(len(X_development)),
         "background_rows": int(len(background)),
