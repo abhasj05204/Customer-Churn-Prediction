@@ -12,6 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_validate
 
+from src.experiment_metadata import collect_environment_metadata
 from src.feature_engineering import engineer_features, split_features_target
 from src.preprocess import build_model_pipeline
 
@@ -129,6 +130,7 @@ def run_baseline_experiment(
     selected_pipeline.fit(X_train, y_train)
 
     result: dict[str, Any] = {
+        "environment": collect_environment_metadata(),
         "dataset": {
             "path": str(csv_path),
             "sha256": dataset_sha256,
