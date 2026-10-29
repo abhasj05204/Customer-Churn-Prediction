@@ -1,7 +1,7 @@
 """Select a model/threshold without using the holdout, then evaluate once.
 
-The dataset target is State. This pipeline does not claim next-month churn
-prediction because the selected CSV has no future outcome label.
+The dataset target is StateNextMonth. Its provenance and temporal alignment must
+be independently verified before claiming real-world next-month forecasting.
 """
 from __future__ import annotations
 
