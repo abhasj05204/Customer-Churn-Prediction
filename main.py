@@ -51,6 +51,17 @@ def main() -> None:
     tune_parser.add_argument("--folds", type=int, default=5)
     tune_parser.add_argument("--trials", type=int, default=30)
 
+    finalize_parser = subparsers.add_parser(
+        "finalize",
+        help="Select model and threshold on development data, then evaluate the holdout once.",
+    )
+    finalize_parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
+    finalize_parser.add_argument("--test-size", type=float, default=0.20)
+    finalize_parser.add_argument("--threshold-validation-fraction", type=float, default=0.25)
+    finalize_parser.add_argument("--random-state", type=int, default=42)
+    finalize_parser.add_argument("--folds", type=int, default=5)
+    finalize_parser.add_argument("--trials", type=int, default=30)
+
     args = parser.parse_args()
     command = args.command or "dataset"
 
@@ -90,6 +101,21 @@ def main() -> None:
             csv_path=DEFAULT_DATA,
             output_dir=args.output_dir,
             test_size=args.test_size,
+            random_state=args.random_state,
+            n_splits=args.folds,
+            n_trials=args.trials,
+        )
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+
+    if command == "finalize":
+        from src.finalize import run_final_evaluation
+
+        report = run_final_evaluation(
+            csv_path=DEFAULT_DATA,
+            output_dir=args.output_dir,
+            test_size=args.test_size,
+            threshold_validation_fraction=args.threshold_validation_fraction,
             random_state=args.random_state,
             n_splits=args.folds,
             n_trials=args.trials,
