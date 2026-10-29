@@ -99,3 +99,15 @@ These are the saved results for the notebook's current `State` classification ta
 - Do not interpret association or feature importance as proof of causation.
 - Do not select the model or tune the decision threshold based on the final test results.
 - Model artifacts such as `.pkl` and `.joblib` files are ignored by Git; artifact handling will be documented when the training pipeline is implemented.
+
+
+## Target audit (Step 2)
+
+Run the reproducible label-distribution and active-cohort audit from the repository root:
+
+~~~bash
+python -m src.validate_target
+python -m unittest discover -s tests -v
+~~~
+
+The audit reports the relationship between State and StateNextMonth and the candidate cohort with State == "No Churn". It is descriptive only; check [docs/TARGET_VALIDATION.md](docs/TARGET_VALIDATION.md) for assumptions that must be confirmed before retraining. The target must not be switched until label definitions, feature timestamps, and label provenance are verified.
