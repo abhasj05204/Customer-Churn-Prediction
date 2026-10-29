@@ -1,0 +1,75 @@
+name: Model validation and evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      trials:
+        description: "Optuna trials (higher is more thorough)"
+        required: true
+        default: "30"
+        type: string
+      folds:
+        description: "Stratified CV folds"
+        required: true
+        default: "5"
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "data/telco_churn.csv"
+      - "requirements.txt"
+      - ".github/workflows/model-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  model-validation:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-model-validation]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OPTUNA_TRIALS: ${{ github.event.inputs.trials || '30' }}
+      CV_FOLDS: ${{ github.event.inputs.folds || '5' }}
+      PYTHONHASHSEED: "42"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Record environment and validate data
+        run: |
+          python --version
+          python -m src.validate_target
+          python -m src.validate_data
+          python -m src.audit_leakage
+
+      - name: Run baseline cross-validation
+        run: python -m src.train --output-dir outputs --folds "$CV_FOLDS"
+
+      - name: Compare imbalance strategies
+        run: python -m src.compare_imbalance --output-dir outputs --folds "$CV_FOLDS"
+
+      - name: Tune, select model, choose threshold and evaluate holdout
+        run: python -m src.finalize --trials "$OPTUNA_TRIALS" --folds "$CV_FOLDS" --output-dir outputs
+
+      - name: Upload model and evaluation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-churn-model-evaluation
+          path: outputs/
+          if-no-files-found: warn
+          retention-days: 30
