@@ -1,6 +1,7 @@
 """Tests for the dataset quality audit."""
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from src.validate_data import audit_dataset
@@ -42,6 +43,23 @@ class DataAuditTests(unittest.TestCase):
         self.assertEqual(report["nonnumeric_counts"]["tenure"], 1)
         self.assertEqual(report["negative_counts"]["tenure"], 1)
 
+
+    def test_flags_invalid_categories_nonfinite_and_numeric_domains(self) -> None:
+        df = pd.DataFrame({
+            "customerID": ["A", "B"],
+            "State": ["No Churn", "Churn"],
+            "gender": ["Alien", "Female"],
+            "SeniorCitizen": [2, 0],
+            "tenure": [np.inf, 2],
+            "MonthlyCharges": [0.0, 30.0],
+            "TotalCharges": [10.0, 20.0],
+        })
+        report = audit_dataset(df)
+        self.assertEqual(report["categorical_domain_errors"]["gender"]["unexpected_values"], ["Alien"])
+        self.assertEqual(report["nonfinite_counts"]["tenure"], 1)
+        self.assertEqual(report["numeric_domain_errors"]["SeniorCitizen"]["not_zero_or_one"], 1)
+        self.assertEqual(report["numeric_domain_errors"]["MonthlyCharges"]["not_positive"], 1)
+ 
     def test_rejects_missing_required_columns(self) -> None:
         with self.assertRaisesRegex(ValueError, "Missing required columns"):
             audit_dataset(pd.DataFrame({"State": ["No Churn"]}))
