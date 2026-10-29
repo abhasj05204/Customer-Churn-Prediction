@@ -73,8 +73,13 @@ def _read_threshold(report_path: Path, fallback: float) -> float:
 
 
 def _model_name(model: object) -> str:
+    """Show the underlying classifier even when probabilities are calibrated."""
     if hasattr(model, "named_steps") and "model" in model.named_steps:
         return type(model.named_steps["model"]).__name__
+    base_estimator = getattr(model, "estimator", None)
+    if base_estimator is not None and hasattr(base_estimator, "named_steps"):
+        if "model" in base_estimator.named_steps:
+            return f"{type(base_estimator.named_steps['model']).__name__} (calibrated)"
     return type(model).__name__
 
 
