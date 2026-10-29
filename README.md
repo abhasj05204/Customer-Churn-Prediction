@@ -1,6 +1,6 @@
 # Customer Churn Prediction
 
-A machine-learning project exploring churn classification in a Telco-style dataset. The repository contains an exploratory notebook and an initial modelling experiment; a reusable training pipeline, API, automated suite, and deployment are planned work.
+A machine-learning project exploring churn classification in a Telco-style dataset. The repository includes the exploratory notebook, reusable feature-engineering and preprocessing modules, a cross-validated baseline trainer, data audits, and unit tests. Explainability, hyperparameter optimization in the corrected pipeline, prediction API, frontend, and deployment remain planned work.
 
 ## Current dataset
 
@@ -19,7 +19,9 @@ This selected dataset does not contain StateNextMonth. The project therefore cur
 
 ## Current project status
 
-The existing notebook includes EDA, engineered features, train/test split, preprocessing, four baseline classifiers, Optuna-tuned XGBoost, and recorded test metrics. The saved metrics are an initial baseline experiment, not production-validated performance.
+The notebook includes EDA and the original modelling experiment. Shared modules now provide feature engineering, leakage-safe preprocessing pipelines, binary evaluation helpers, target/data audits, and a training-only stratified cross-validation baseline runner. The selected model is chosen by mean cross-validation ROC-AUC; the holdout set is intentionally not scored during selection. The original notebook metrics are historical baseline results, not production-validated performance.
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) has been added to install dependencies, run unit tests, and execute the dataset audits on pushes and pull requests.
 
 See:
 - [Project baseline and historical metrics](docs/PROJECT_BASELINE.md)
@@ -38,7 +40,9 @@ Customer-Churn-Prediction/
 │   ├── validate_target.py
 │   ├── validate_data.py
 │   ├── feature_engineering.py
-│   └── preprocess.py
+│   ├── preprocess.py
+│   ├── evaluate.py
+│   └── train.py
 ├── models/               # Saved artifacts (ignored by Git by default)
 ├── reports/
 │   └── figures/
@@ -46,7 +50,9 @@ Customer-Churn-Prediction/
 │   ├── test_target_validation.py
 │   ├── test_data_validation.py
 │   ├── test_feature_engineering.py
-│   └── test_preprocess.py
+│   ├── test_preprocess.py
+│   ├── test_evaluate.py
+│   └── test_train.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
@@ -126,11 +132,12 @@ The old Optuna validation score must not be treated as an unbiased generalizatio
 ## Planned engineering milestones
 
 1. Define the intended business use and confirm the semantics/timing of State.
-2. Audit data quality and feature engineering.
-3. Rebuild preprocessing and model comparison using leakage-safe stratified cross-validation.
-4. Compare class weighting, categorical-aware resampling, and no resampling; tune on training data only.
-5. Select threshold and model using validation predictions, then evaluate once on an untouched holdout test set.
-6. Add explainability, business insights, reusable training/evaluation modules, automated tests, model persistence, prediction API, frontend, and deployment.
+2. Audit data quality and feature engineering. (Audit implementation is present; suspicious zero-tenure charges still need a documented modeling experiment.)
+3. Run and verify the cross-validated baseline in a clean environment; compare class-weighted models against no-resampling alternatives.
+4. Tune promising models using training-only CV; consider categorical-aware imbalance handling instead of ordinary SMOTE after one-hot encoding.
+5. Choose a decision threshold on validation predictions and reserve the holdout test for the final evaluation.
+6. Add model explainability, business insights, and production-facing inference modules.
+7. Add API, frontend, tests for end-to-end prediction, and deployment.
 
 ## Notes
 
