@@ -1,58 +1,44 @@
 # Target validation — Step 2
 
-## Purpose
+## Dataset selected for this project
 
-This audit documents the observed relationship between State and StateNextMonth. It does **not** independently establish what either label means, when features were measured, or how the next-month label was created. The repository currently has no data dictionary or label-provenance notes, so the production target must not be changed based on column names alone.
+The newly selected dataset is the 21-column version uploaded by the project owner. Its SHA-256 is:
 
-## Current notebook behavior
+~~~text
+58a435baed4902c1642facdbba81f8faa7c10d7fcec37b9c5f7077aecaf47ffd
+~~~
 
-The current notebook copies the dataset, drops customerID and StateNextMonth, and maps State to 0/1. Thus, the saved Phase 3/4 model results are for classifying State, not for predicting StateNextMonth.
+It contains 7,043 rows and 21 columns. It has the label column State and does **not** contain StateNextMonth. A byte-for-byte check confirmed that this file is exactly the previously committed 22-column CSV with the final StateNextMonth column removed and line endings normalized. The source data rows and State labels are unchanged.
 
-## Observed dataset audit
+## Observed data checks
 
-The checked CSV has 7,043 rows and 22 columns. Its saved label counts are:
+- Rows: 7,043
+- Columns: 21
+- Unique customer IDs: 7,043
+- Duplicate rows: 0
+- Missing cells: 0
+- State labels: 5,174 No Churn and 1,869 Churn
+- Observed Churn share: 26.54%
+- Tenure range: 0–72
+- Tenure equal to zero: 11 rows
 
-- State: 5,174 No Churn, 1,869 Churn (26.54% churn).
-- StateNextMonth across all rows: 4,381 No Churn, 2,662 Churn.
+The uploaded file has no missing data in its current representation, including TotalCharges, which is numeric. These checks describe this file; they do not prove the dataset is free of every possible data-quality issue.
 
-Observed cross-tabulation (rows are State; columns are StateNextMonth):
+## What the current notebook predicts
 
-| State | Next month No Churn | Next month Churn |
-|---|---:|---:|
-| No Churn | 4,218 | 956 |
-| Churn | 163 | 1,706 |
+The notebook maps State labels to 0/1 and trains models to classify State. The recorded historical model metrics therefore apply to the State classification task.
 
-If—and only if—State == "No Churn" means a customer is active at the prediction time and StateNextMonth really is the subsequent outcome, the candidate active cohort contains 5,174 rows: 956 have a Churn next-month label and 4,218 have a No Churn next-month label. The observed rate in that cohort is 956 / 5,174 = 18.48%.
+## What cannot be claimed from this file
 
-The full-dataset StateNextMonth rate (2,662 / 7,043) should not be used as the active-customer next-month churn rate because that denominator also contains rows whose State is Churn.
+This selected dataset does not have a StateNextMonth target, an explicit observation date, or documented future-outcome labels. We cannot claim that a model trained only on this file predicts churn in the next month. The previous repository version contained an extra StateNextMonth column, but that column has been removed from the selected source dataset and must not be silently used as ground truth.
 
-## Candidate objectives
+The chosen target for the current data is State. To develop a genuine forward-looking churn model in the future, we would need appropriately time-aligned customer features and outcomes, together with reliable documentation/provenance. Column names alone are not evidence of prediction horizon.
 
-1. **Current-state classification:** predict State from features that are legitimately available at the same prediction time. This is the task represented by the existing notebook, but it may be operationally unhelpful if customers are already churned when the prediction is made.
-2. **Next-month churn prediction:** restrict modelling to customers active at prediction time (candidate filter: State == "No Churn") and use StateNextMonth as the target, but only after verifying the dataset's label definitions, timestamp alignment, and generation procedure.
-
-## Required verification before model training
-
-Confirm the source/data dictionary or dataset-generation code for these points:
-
-- Does State mean current customer status at time t?
-- Does StateNextMonth mean the same customer's status at t+1 month?
-- Were all model input features measured at or before time t, before the target outcome?
-- Are rows one customer each or repeated customer-period observations? If repeated, use a time/customer-aware split as appropriate.
-- Do churn labels represent actual churn, synthetic transitions, or a derived label?
-
-Until those points are confirmed, neither target should be described as a verified future-churn target.
-
-## Reproducible command
+## Reproducible commands
 
 From the repository root:
 
 ~~~bash
 python -m src.validate_target
-~~~
-
-Run the focused unit tests:
-
-~~~bash
 python -m unittest discover -s tests -v
 ~~~
