@@ -319,10 +319,10 @@ def run_final_evaluation(
             "sha256": dataset_sha256,
             "rows": int(len(raw_df)),
             "columns": int(len(raw_df.columns)),
-            "target_column": "State",
+            "target_column": "StateNextMonth",
             "target_counts": {
                 str(label): int(count)
-                for label, count in raw_df["State"].value_counts().items()
+                for label, count in raw_df["StateNextMonth"].value_counts().items()
             },
         },
         "split": {
@@ -365,9 +365,9 @@ def run_final_evaluation(
             "threshold_objective": "validation F1; ties use recall then distance from 0.5",
         },
         "warning": (
-            "Final metrics describe classification of State, not verified next-month churn. "
-            "The holdout was excluded from model and threshold selection and evaluated only "
-            "after those choices were frozen."
+            "Final metrics describe classification of the supplied StateNextMonth label. Its provenance "
+            "and temporal alignment are unverified. The holdout was excluded from model and "
+            "threshold selection and evaluated only after those choices were frozen."
         ),
     }
 
