@@ -173,7 +173,7 @@ This is the end-to-end modelling evaluation command. It compares baseline models
 python -m src.finalize --trials 30 --folds 5 --output-dir outputs
 ~~~
 
-The command writes `outputs/final_evaluation.json` and `outputs/final_pipeline.joblib`. Review the selected model, threshold-validation metrics, final holdout metrics, and confusion counts in the JSON report. The holdout is not used to choose the model or threshold.
+The command writes `outputs/final_evaluation.json` and `outputs/final_pipeline.joblib`. Review the selected model, threshold-validation metrics, Brier/log-loss/ECE calibration diagnostics, final holdout metrics, and confusion counts in the JSON report. Calibration diagnostics use only the separate validation split; the code does not apply calibration automatically. The holdout is not used to choose the model or threshold.
 
 Equivalent top-level command: `python main.py finalize --trials 30`.
 
