@@ -7,7 +7,7 @@ Legend: **Done** = implementation/evidence available; **Partial** = some work ex
 | # | Planned step | Status | Current evidence | Remaining acceptance check |
 |---:|---|---|---|---|
 | 01 | Preserve current project | Done | Baseline docs/metrics, Git commit history on `main`, selected data fingerprint, pinned direct Python dependencies, CI and notebook validation | Keep changes on `main`; no separate branch created per working preference |
-| 02 | Validate target/business objective | Partial | Current objective documented as classification of `State`; selected 21-column dataset has no `StateNextMonth`; no future-churn claim in API/UI/docs | Exact source file/provenance and temporal semantics are unknown; future/next-month objective requires time-aligned labels |
+| 02 | Validate target/business objective | Partial | Training code and API now target the supplied `StateNextMonth` label; provenance and temporal alignment remain unverified | Document source, label-generation method, observation cut-off and future outcome window before claiming genuine next-month prediction |
 | 03 | Data quality/leakage audit | Partial | Schema/data audit, target/identifier exclusion, extra-column whitelist, leakage audit/tests, CI execution | Timing leakage cannot be proven without trusted observation/outcome dates; review zero-tenure charge anomaly |
 | 04 | Feature engineering/preprocessing | Done for code | Shared training/inference feature contract, fold-local impute/scale/encode pipeline, unit tests and docs | Compare sensitivity to the 11 zero-tenure/high-charge records before release |
 | 05 | Baseline model comparison | Done | Pinned Python 3.12.15 five-fold baseline CV ran successfully for Logistic Regression, Random Forest and XGBoost; report is in FINAL_EVALUATION.md and the Actions artifact | Repeat only when code/data/modeling assumptions change; use holdout only at Step 9 |
@@ -22,7 +22,7 @@ Legend: **Done** = implementation/evidence available; **Partial** = some work ex
 
 ## Current recommended sequence
 
-1. Finish the Step 3 feature-timing limitation using the available data; document that it cannot be inferred without timestamps.
+1. Verify the source and time alignment of StateNextMonth labels; document that the CSV alone cannot prove they are observed future outcomes.
 2. Run the baseline and fair imbalance comparison using the committed commands.
 3. Tune/choose the model and threshold, assess calibration, then produce the final untouched holdout report.
 4. Generate SHAP/business insights with the final model.
