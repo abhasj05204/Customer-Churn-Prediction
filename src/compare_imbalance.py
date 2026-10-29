@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
 
+from src.experiment_metadata import collect_environment_metadata
 from src.feature_engineering import engineer_features, split_features_target
 from src.preprocess import build_model_pipeline, build_smote_pipeline, build_smotenc_pipeline
 from src.train import DEFAULT_DATA, load_dataset
@@ -109,6 +110,7 @@ def run_imbalance_experiment(
         X_train, y_train, random_state=random_state, n_splits=n_splits
     )
     report: dict[str, Any] = {
+        "environment": collect_environment_metadata(),
         "dataset": {
             "path": str(csv_path),
             "sha256": dataset_sha256,
