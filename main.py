@@ -62,6 +62,15 @@ def main() -> None:
     finalize_parser.add_argument("--folds", type=int, default=5)
     finalize_parser.add_argument("--trials", type=int, default=30)
 
+    explain_parser = subparsers.add_parser(
+        "explain", help="Generate SHAP explanations for a saved final pipeline."
+    )
+    explain_parser.add_argument("--model", type=Path, default=Path("outputs/final_pipeline.joblib"))
+    explain_parser.add_argument("--output-dir", type=Path, default=Path("outputs/explainability"))
+    explain_parser.add_argument("--background-size", type=int, default=100)
+    explain_parser.add_argument("--explain-size", type=int, default=40)
+    explain_parser.add_argument("--random-state", type=int, default=42)
+
     args = parser.parse_args()
     command = args.command or "dataset"
 
@@ -119,6 +128,20 @@ def main() -> None:
             random_state=args.random_state,
             n_splits=args.folds,
             n_trials=args.trials,
+        )
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+
+    if command == "explain":
+        from src.explain import run_shap_explanations
+
+        report = run_shap_explanations(
+            model_path=args.model,
+            csv_path=DEFAULT_DATA,
+            output_dir=args.output_dir,
+            background_size=args.background_size,
+            explain_size=args.explain_size,
+            random_state=args.random_state,
         )
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return
