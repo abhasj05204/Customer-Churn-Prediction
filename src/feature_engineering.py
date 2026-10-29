@@ -22,7 +22,6 @@ SERVICE_COLUMNS = (
 SECURITY_SUPPORT_COLUMNS = (
     "OnlineSecurity", "OnlineBackup", "DeviceProtection", "TechSupport",
 )
-IDENTIFIER_OR_UNAVAILABLE_LABEL_COLUMNS = ("customerID", "StateNextMonth", "State")
 
 
 def engineer_inference_features(df: pd.DataFrame) -> pd.DataFrame:
