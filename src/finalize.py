@@ -356,6 +356,10 @@ def run_final_evaluation(
             "preprocessing_fit_inside_cv": True,
             "calibration_method_selected_on_training_only_oof_predictions": True,
             "calibrator_fitted_on_model_training_split": True,
+            "calibration_selection_rule": (
+                "Use sigmoid or isotonic only when training-only OOF log loss and Brier "
+                "both improve over uncalibrated probabilities."
+            ),
             "threshold_selected_on_separate_validation_split": True,
             "resampling": "none",
             "threshold_objective": "validation F1; ties use recall then distance from 0.5",
