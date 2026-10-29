@@ -15,7 +15,7 @@ The selected file is the 21-column CSV supplied for this project and committed a
 - Unique customer IDs: 7,043
 - Dataset SHA-256: 58a435baed4902c1642facdbba81f8faa7c10d7fcec37b9c5f7077aecaf47ffd
 
-This selected dataset does not contain StateNextMonth. The project therefore currently supports classification of the State label only. It must not be described as a verified next-month churn predictor without a time-aligned future outcome label and reliable label provenance.
+This selected dataset does not contain StateNextMonth. The current task is binary classification of the supplied State label; it is not a verified next-month churn predictor. See [target validation](docs/TARGET_VALIDATION.md) for the evidence and provenance limits.
 
 ## Current project status
 
@@ -49,6 +49,7 @@ Customer-Churn-Prediction/
 │       ├── App.jsx
 │       └── styles.css
 ├── src/
+│   ├── __init__.py
 │   ├── validate_target.py
 │   ├── validate_data.py
 │   ├── feature_engineering.py
@@ -75,7 +76,8 @@ Customer-Churn-Prediction/
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
-│   └── DATA_QUALITY.md
+│   ├── DATA_QUALITY.md
+│   └── CV_EXPERIMENTS.md
 ├── requirements.txt
 ├── .github/workflows/
 │   ├── ci.yml
@@ -222,7 +224,7 @@ The old Optuna validation score must not be treated as an unbiased generalizatio
 ## Planned engineering milestones
 
 1. Define the intended business use and confirm the semantics/timing of State.
-2. Audit data quality and feature engineering. (Audit implementation is present; suspicious zero-tenure charges still need a documented modeling experiment.)
+2. Target objective is set to classification of the provided State label, with future-churn claims explicitly excluded. Data-quality audit is implemented; suspicious zero-tenure charges still need a documented modeling experiment.
 3. Run and verify the cross-validated baseline in a clean environment; compare class-weighted models against no-resampling alternatives.
 4. Run Optuna tuning and compare its cross-validation results with the Logistic Regression baseline; assess class-weighting and categorical-aware imbalance handling. A finalization command now uses a separate threshold-validation split and a one-standard-error model-selection rule.
 5. Use validation predictions to choose the decision threshold and reserve the holdout test for final evaluation. The `src.finalize` orchestration implements this workflow.
