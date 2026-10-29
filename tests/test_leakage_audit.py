@@ -60,6 +60,15 @@ class LeakageAuditTests(unittest.TestCase):
         self.assertEqual(report["structural_leakage_check"]["status"], "fail")
         self.assertEqual(report["target_label_errors"]["unknown_values"], ["Unknown"])
 
+
+    def test_flags_unreviewed_source_columns(self) -> None:
+        df = valid_source_frame()
+        df["future_churn_label"] = "Churn"
+        report = audit_feature_leakage(df)
+        self.assertEqual(report["unexpected_source_columns"], ["future_churn_label"])
+        self.assertEqual(report["structural_leakage_check"]["status"], "fail")
+        self.assertNotIn("future_churn_label", report["predictor_columns"])
+
     def test_rejects_missing_predictor_columns(self) -> None:
         df = valid_source_frame().drop(columns=["Contract"])
         with self.assertRaisesRegex(ValueError, "Missing raw predictor columns"):
