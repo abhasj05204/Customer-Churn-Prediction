@@ -28,6 +28,7 @@ See:
 - [Target validation findings](docs/TARGET_VALIDATION.md)
 - [Data quality audit](docs/DATA_QUALITY.md)
 - [Structural leakage and feature-timing audit](docs/LEAKAGE_AUDIT.md)
+- [Feature engineering and preprocessing](docs/FEATURE_ENGINEERING.md)
 - [Exploratory CV experiment report](docs/CV_EXPERIMENTS.md)
 
 ## Repository structure
@@ -81,6 +82,7 @@ Customer-Churn-Prediction/
 │   ├── TARGET_VALIDATION.md
 │   ├── DATA_QUALITY.md
 │   ├── LEAKAGE_AUDIT.md
+│   ├── FEATURE_ENGINEERING.md
 │   └── CV_EXPERIMENTS.md
 ├── requirements.txt
 ├── .github/workflows/
@@ -232,9 +234,10 @@ The old Optuna validation score must not be treated as an unbiased generalizatio
 2. Target objective is set to classification of the provided State label, with future-churn claims explicitly excluded. Data-quality audit is implemented; suspicious zero-tenure charges still need a documented modeling experiment.
 3. Run and verify the cross-validated baseline in a clean environment; compare class-weighted models against no-resampling alternatives.
 4. Run Optuna tuning and compare its cross-validation results with the Logistic Regression baseline; assess class-weighting and categorical-aware imbalance handling. A finalization command now uses a separate threshold-validation split and a one-standard-error model-selection rule.
-5. Use validation predictions to choose the decision threshold and reserve the holdout test for final evaluation. The `src.finalize` orchestration implements this workflow.
-6. Add model explainability, business insights, and production-facing inference modules. (SHAP module is implemented.)
-7. Harden model/API integration with end-to-end smoke tests, add business insight reporting, configure deployment, and document monitoring/retraining.
+5. Feature engineering and leakage-safe preprocessing have a shared whitelist/schema and fold-local transformer pipeline; see [FEATURE_ENGINEERING.md](docs/FEATURE_ENGINEERING.md).
+6. Use validation predictions to choose the decision threshold and reserve the holdout test for final evaluation. The `src.finalize` orchestration implements this workflow.
+7. Add business insights and production-facing inference modules. (SHAP module is implemented.)
+8. Harden model/API integration with end-to-end smoke tests, add business insight reporting, configure deployment, and document monitoring/retraining.
 
 ## Notes
 
