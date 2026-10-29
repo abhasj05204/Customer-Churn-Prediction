@@ -67,6 +67,14 @@ class FeatureEngineeringTests(unittest.TestCase):
         self.assertIn("TenureGroup", features.columns)
         self.assertIn("AvgMonthlyCharges", features.columns)
 
+
+    def test_unreviewed_extra_columns_do_not_enter_features(self) -> None:
+        raw = sample_frame().drop(columns=["customerID", "State", "StateNextMonth"])
+        raw["future_churn_label"] = ["Churn", "No Churn"]
+        features = engineer_inference_features(raw)
+        self.assertNotIn("future_churn_label", features.columns)
+        self.assertEqual(len(features.columns), len(raw.columns) - 1 + 4)
+
     def test_rejects_invalid_state(self) -> None:
         df = sample_frame()
         df.loc[0, "State"] = "Unknown"
