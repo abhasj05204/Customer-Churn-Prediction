@@ -10,10 +10,10 @@ REQUIRED_INPUT_COLUMNS = (
     "PhoneService", "MultipleLines", "InternetService", "OnlineSecurity",
     "OnlineBackup", "DeviceProtection", "TechSupport", "StreamingTV",
     "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
-    "MonthlyCharges", "TotalCharges", "State",
+    "MonthlyCharges", "TotalCharges", "State", "StateNextMonth",
 )
 RAW_FEATURE_COLUMNS = tuple(
-    column for column in REQUIRED_INPUT_COLUMNS if column not in {"customerID", "State"}
+    column for column in REQUIRED_INPUT_COLUMNS if column not in {"customerID", "State", "StateNextMonth"}
 )
 SERVICE_COLUMNS = (
     "PhoneService", "MultipleLines", "OnlineSecurity", "OnlineBackup",
