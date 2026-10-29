@@ -47,7 +47,7 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(health.json()["model_loaded"])
         info = self.client.get("/model-info")
         self.assertEqual(info.status_code, 200)
-        self.assertEqual(info.json()["target"], "State")
+        self.assertEqual(info.json()["target"], "StateNextMonth")
 
     def test_single_prediction_does_not_require_target_or_customer_id(self) -> None:
         response = self.client.post("/predict", json=sample_customer())
