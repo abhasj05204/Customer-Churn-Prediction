@@ -137,7 +137,7 @@ def run_baseline_experiment(
             "rows": int(len(raw_df)),
             "columns": int(len(raw_df.columns)),
             "target_column": "StateNextMonth",
-            "target_counts": {str(k): int(v) for k, v in raw_df["State"].value_counts().items()},
+            "target_counts": {str(k): int(v) for k, v in raw_df["StateNextMonth"].value_counts().items()},
         },
         "split": {
             "test_size": float(test_size),
@@ -157,8 +157,8 @@ def run_baseline_experiment(
         "warning": (
             "This experiment selects a baseline using training-only cross-validation and "
             "does not calculate holdout metrics. It classifies the dataset State label; "
-            "the dataset has no StateNextMonth column or documented temporal outcome, "
-            "so results do not establish future/next-month churn prediction."
+            "StateNextMonth is the supplied target, but its real-world provenance and temporal alignment "
+            "have not been independently verified."
         ),
     }
 
