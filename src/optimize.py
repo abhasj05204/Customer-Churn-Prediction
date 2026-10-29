@@ -16,6 +16,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
 from xgboost import XGBClassifier
 
+from src.experiment_metadata import collect_environment_metadata
 from src.feature_engineering import engineer_features, split_features_target
 from src.preprocess import build_model_pipeline
 from src.train import DEFAULT_DATA, load_dataset
@@ -128,6 +129,7 @@ def run_optuna_experiment(
     best_pipeline.fit(X_train, y_train)
 
     result: dict[str, Any] = {
+        "environment": collect_environment_metadata(),
         "dataset": {
             "path": str(csv_path),
             "sha256": dataset_sha256,
