@@ -36,13 +36,15 @@ Customer-Churn-Prediction/
 │   └── EDA.ipynb
 ├── src/
 │   ├── validate_target.py
-│   └── validate_data.py
+│   ├── validate_data.py
+│   └── feature_engineering.py
 ├── models/               # Saved artifacts (ignored by Git by default)
 ├── reports/
 │   └── figures/
 ├── tests/
 │   ├── test_target_validation.py
-│   └── test_data_validation.py
+│   ├── test_data_validation.py
+│   └── test_feature_engineering.py
 ├── docs/
 │   ├── PROJECT_BASELINE.md
 │   ├── TARGET_VALIDATION.md
