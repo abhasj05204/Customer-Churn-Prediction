@@ -20,15 +20,15 @@ Metrics below are mean ± standard deviation across five folds.
 | Balanced Logistic Regression | 0.7499 ± 0.0145 | 0.5188 ± 0.0183 | 0.7967 ± 0.0382 | 0.6282 ± 0.0227 | **0.8458 ± 0.0125** | **0.6622 ± 0.0140** |
 | Balanced Random Forest | 0.7891 ± 0.0133 | 0.6400 ± 0.0355 | 0.4702 ± 0.0282 | 0.5419 ± 0.0291 | 0.8268 ± 0.0120 | 0.6197 ± 0.0315 |
 | XGBoost (no resampling) | **0.7987 ± 0.0105** | **0.6497 ± 0.0316** | 0.5271 ± 0.0272 | 0.5814 ± 0.0208 | 0.8422 ± 0.0095 | 0.6563 ± 0.0210 |
-| XGBoost, Optuna (10 exploratory trials) | — | — | — | — | **0.8502 ± 0.0130** | 0.6701 |
+| XGBoost, Optuna (30 exploratory trials) | — | — | — | — | **0.8502 ± 0.0130** | 0.6701 |
 
-The XGBoost Optuna result is from an exploratory 10-trial run over the same parameter ranges subsequently committed to `src/optimize.py`. It is not from the final clean, pinned environment, and ten trials are not enough to establish that the improvement is robust.
+The XGBoost Optuna result is from an exploratory 30-trial run over the same parameter ranges subsequently committed to `src/optimize.py`. It is not from the final clean, pinned environment. The improvement over Logistic Regression is small relative to fold variability and does not establish that XGBoost is robustly better.
 
 ## Interpretation
 
 - On the initial baseline experiment, balanced Logistic Regression had the highest mean CV ROC-AUC and Average Precision. It remains an important benchmark.
 - XGBoost had higher fold-mean accuracy and precision, but lower recall than Logistic Regression at the default 0.5 threshold. Threshold selection must use validation/OOF predictions and business costs—not the holdout test.
-- Ten exploratory Optuna trials produced a modest ROC-AUC increase over the Logistic Regression CV mean. The gap is small relative to fold variability, so this does not yet justify declaring XGBoost the winner.
+- Thirty exploratory Optuna trials produced a modest ROC-AUC increase over the Logistic Regression CV mean. The gap is small relative to fold variability, so this does not yet justify declaring XGBoost the winner.
 - No holdout metric has been used for these choices. The fixed holdout should be evaluated only after model and decision threshold are chosen.
 
 ## Reproduce in the repository environment
