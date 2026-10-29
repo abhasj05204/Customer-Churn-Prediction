@@ -181,7 +181,7 @@ def audit_dataset(df: pd.DataFrame) -> dict[str, Any]:
         "exact_duplicate_rows": duplicate_rows,
         "unique_customer_ids": int(customer_ids.nunique(dropna=True)),
         "rows_with_duplicate_customer_id": duplicate_id_rows,
-        "target_column": "State",
+        "target_column": "StateNextMonth",
         "target_counts": target_counts,
         "unknown_target_labels": unknown_targets,
         "missing_target_labels": missing_target,
