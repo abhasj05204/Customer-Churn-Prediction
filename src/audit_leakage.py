@@ -81,7 +81,6 @@ def audit_feature_leakage(df: pd.DataFrame) -> dict[str, Any]:
         and target_missing == 0
         and not unexpected_source_columns
     )
-    timing_verified = bool(temporal_columns_present) and not temporal_columns_missing
 
     return {
         "dataset_rows": int(len(df)),
