@@ -110,7 +110,7 @@ def run_baseline_experiment(
     random_state: int = 42,
     n_splits: int = 5,
 ) -> dict[str, Any]:
-    """Select by training CV ROC-AUC, then evaluate the selected model once on holdout."""
+    """Select by training CV ROC-AUC and leave holdout data unevaluated."""
     if not 0.05 <= test_size <= 0.5:
         raise ValueError("test_size must be between 0.05 and 0.5.")
     from sklearn.model_selection import train_test_split
