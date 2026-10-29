@@ -31,6 +31,7 @@ See:
 - [Feature engineering and preprocessing](docs/FEATURE_ENGINEERING.md)
 - [Imbalance strategy comparison](docs/IMBALANCE_COMPARISON.md)
 - [Exploratory CV experiment report](docs/CV_EXPERIMENTS.md)
+- [13-step implementation status](docs/ROADMAP_STATUS.md)
 
 ## Repository structure
 
@@ -87,7 +88,8 @@ Customer-Churn-Prediction/
 │   ├── LEAKAGE_AUDIT.md
 │   ├── FEATURE_ENGINEERING.md
 │   ├── IMBALANCE_COMPARISON.md
-│   └── CV_EXPERIMENTS.md
+│   ├── CV_EXPERIMENTS.md
+│   └── ROADMAP_STATUS.md
 ├── requirements.txt
 ├── .github/workflows/
 │   ├── ci.yml
