@@ -42,6 +42,15 @@ def main() -> None:
     train_parser.add_argument("--random-state", type=int, default=42)
     train_parser.add_argument("--folds", type=int, default=5)
 
+    tune_parser = subparsers.add_parser(
+        "tune", help="Tune XGBoost with training-only stratified cross-validation."
+    )
+    tune_parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
+    tune_parser.add_argument("--test-size", type=float, default=0.20)
+    tune_parser.add_argument("--random-state", type=int, default=42)
+    tune_parser.add_argument("--folds", type=int, default=5)
+    tune_parser.add_argument("--trials", type=int, default=30)
+
     args = parser.parse_args()
     command = args.command or "dataset"
 
@@ -70,6 +79,20 @@ def main() -> None:
             test_size=args.test_size,
             random_state=args.random_state,
             n_splits=args.folds,
+        )
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+
+    if command == "tune":
+        from src.optimize import run_optuna_experiment
+
+        report = run_optuna_experiment(
+            csv_path=DEFAULT_DATA,
+            output_dir=args.output_dir,
+            test_size=args.test_size,
+            random_state=args.random_state,
+            n_splits=args.folds,
+            n_trials=args.trials,
         )
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return
