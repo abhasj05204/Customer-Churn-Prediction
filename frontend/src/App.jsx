@@ -336,7 +336,7 @@ export default function App() {
           </article>
           <article className="stat-card">
             <span className="stat-icon peach"><Icon name="shield" size={18} /></span>
-            <div><span className="stat-label">Prediction target</span><strong>StateNextMonth <small>label</small></strong><span className="stat-note">Recorded status classification</span></div>
+            <div><span className="stat-label">Prediction target</span><strong>State <small>label</small></strong><span className="stat-note">Recorded status classification</span></div>
           </article>
         </section>
 
