@@ -16,7 +16,7 @@ import pandas as pd
 from src.feature_engineering import REQUIRED_INPUT_COLUMNS
 
 # Keep validation and the training/inference contract synchronized.
-EXPECTED_COLUMNS = REQUIRED_INPUT_COLUMNS + (\"State\",)
+EXPECTED_COLUMNS = REQUIRED_INPUT_COLUMNS
 REQUIRED_COLUMNS = ("customerID", "State")
 NUMERIC_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
 NONNEGATIVE_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
