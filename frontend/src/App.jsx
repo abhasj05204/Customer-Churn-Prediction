@@ -389,7 +389,7 @@ export default function App() {
               <div className="snapshot-meter"><span style={{ width: `${(serviceCount / 8) * 100}%` }} /></div>
               <p>Based on the current form, {serviceCount} of 8 service indicators are marked “Yes”. This is descriptive only, not a separate risk score.</p>
             </div>
-            <div className="methodology-note"><Icon name="alert" size={16} /><p><strong>Interpret results carefully.</strong> The model predicts the supplied StateNextMonth label. Its source and temporal alignment have not been independently verified.</p></div>
+            <div className="methodology-note"><Icon name="alert" size={16} /><p><strong>Interpret results carefully.</strong> The model classifies recorded State status; it does not establish a future churn horizon.</p></div>
           </aside>
         </div>
 
