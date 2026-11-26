@@ -1,4 +1,4 @@
-"""Audit StateNextMonth labels and record their unverified provenance explicitly."""
+"""Audit the supported State target and optional, unverified future-label metadata."""
 from __future__ import annotations
 
 import argparse
@@ -9,82 +9,61 @@ from typing import Any
 import pandas as pd
 
 LABELS = ("No Churn", "Churn")
-REQUIRED_COLUMNS = ("customerID", "State", "StateNextMonth")
+REQUIRED_COLUMNS = ("customerID", "State")
 
 
 def audit_target_columns(df: pd.DataFrame) -> dict[str, Any]:
-    """Validate supplied target labels without assuming they are observed future outcomes."""
+    """Validate recorded State; never require or infer StateNextMonth."""
     missing_columns = [column for column in REQUIRED_COLUMNS if column not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
     if df.empty:
         raise ValueError("Cannot audit an empty dataset.")
 
-    current = df["State"].astype("string").str.strip()
-    target = df["StateNextMonth"].astype("string").str.strip()
-    for name, values in (("State", current), ("StateNextMonth", target)):
-        invalid = sorted(str(v) for v in values[~values.isin(LABELS)].dropna().unique())
-        missing = int(values.isna().sum())
-        if invalid or missing:
-            raise ValueError(
-                f"Unexpected/missing {name} labels. Invalid={invalid}, missing={missing}; "
-                f"expected only {list(LABELS)}."
-            )
-
+    target = df["State"].astype("string").str.strip()
+    invalid = sorted(str(v) for v in target[~target.isin(LABELS)].dropna().unique())
+    missing = int(target.isna().sum())
+    if invalid or missing:
+        raise ValueError(
+            f"Unexpected/missing State labels. Invalid={invalid}, missing={missing}; expected only {list(LABELS)}."
+        )
     customer_ids = df["customerID"].astype("string").str.strip()
-    transition = pd.crosstab(current, target).reindex(
-        index=LABELS, columns=LABELS, fill_value=0
-    )
-    target_counts = {label: int(target.eq(label).sum()) for label in LABELS}
-    active_mask = current.eq("No Churn")
-    active_target = target[active_mask]
-    active_count = int(active_mask.sum())
-
+    future_available = "StateNextMonth" in df.columns
+    future_valid = False
+    future_counts: dict[str, int] | None = None
+    future_warning = "StateNextMonth is absent; no future-label claim is supported."
+    if future_available:
+        future = df["StateNextMonth"].astype("string").str.strip()
+        future_invalid = sorted(str(v) for v in future[~future.isin(LABELS)].dropna().unique())
+        future_missing = int(future.isna().sum())
+        future_valid = not future_invalid and future_missing == 0
+        if future_valid:
+            future_counts = {label: int(future.eq(label).sum()) for label in LABELS}
+        future_warning = (
+            "Optional StateNextMonth values are present but their provenance and temporal alignment are unverified; "
+            "they are not used as the training target."
+        )
     return {
         "row_count": int(len(df)),
         "column_count": int(len(df.columns)),
         "columns": [str(column) for column in df.columns],
         "unique_customer_count": int(customer_ids.nunique(dropna=True)),
         "rows_with_duplicate_customer_id": int(customer_ids.duplicated(keep=False).sum()),
-        "target_column": "StateNextMonth",
-        "target_counts": target_counts,
+        "target_column": "State",
+        "target_counts": {label: int(target.eq(label).sum()) for label in LABELS},
         "target_churn_rate": float(target.eq("Churn").mean()),
-        "current_state_counts": {label: int(current.eq(label).sum()) for label in LABELS},
-        "state_by_state_next_month": {
-            current_label: {
-                target_label: int(transition.loc[current_label, target_label])
-                for target_label in LABELS
-            }
-            for current_label in LABELS
-        },
-        "candidate_active_cohort": {
-            "definition": 'State == "No Churn"',
-            "rows": active_count,
-            "next_month_churn_count": int(active_target.eq("Churn").sum()),
-            "next_month_churn_rate": (
-                float(active_target.eq("Churn").mean()) if active_count else None
-            ),
-        },
-        "label_provenance": {
-            "status": "unverified",
-            "warning": (
-                "The CSV contains StateNextMonth labels, but file contents alone cannot prove "
-                "they were measured from actual next-month observations. Keep this as a supplied "
-                "target label until a source, date range, and label-generation method are documented."
-            ),
-        },
-        "temporal_alignment": {
-            "status": "not_verifiable",
-            "warning": (
-                "No trusted observation timestamp or outcome date is available in the declared "
-                "schema, so this audit does not establish a real next-month prediction horizon."
-            ),
+        "state_next_month_available": future_available,
+        "state_next_month_valid_labels": future_valid,
+        "state_next_month_counts": future_counts,
+        "future_label_provenance": {
+            "status": "unverified" if future_available else "absent",
+            "warning": future_warning,
         },
     }
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Audit StateNextMonth target labels.")
+    parser = argparse.ArgumentParser(description="Audit recorded State target labels.")
     default_csv = Path(__file__).resolve().parents[1] / "data" / "telco_churn.csv"
     parser.add_argument("--csv", type=Path, default=default_csv, help=f"Dataset CSV path (default: {default_csv})")
     args = parser.parse_args()
