@@ -30,7 +30,7 @@ def sample_frame() -> pd.DataFrame:
             "MonthlyCharges": [80.0, 25.0],
             "TotalCharges": [160.0, 1397.475],
             "State": ["Churn", "No Churn"],
-            "StateNextMonth": ["Churn", "No Churn"],
+            "StateNextMonth": ["No Churn", "Churn"],
         }
     )
 
@@ -43,7 +43,7 @@ class FeatureEngineeringTests(unittest.TestCase):
         pd.testing.assert_frame_equal(df, original)
         self.assertNotIn("customerID", engineered.columns)
         self.assertNotIn("State", engineered.columns)
-        self.assertEqual(engineered["StateNextMonth"].tolist(), [1, 0])
+        self.assertEqual(engineered["State"].tolist(), [1, 0])
         self.assertEqual(engineered["ServiceCount"].tolist(), [5, 0])
         self.assertEqual(engineered["SecuritySupportCount"].tolist(), [2, 0])
         self.assertEqual(engineered["AvgMonthlyCharges"].tolist(), [80.0, 25.0])
@@ -75,11 +75,11 @@ class FeatureEngineeringTests(unittest.TestCase):
         self.assertNotIn("future_churn_label", features.columns)
         self.assertEqual(len(features.columns), len(raw.columns) + 4)
 
-    def test_rejects_invalid_state_next_month(self) -> None:
+    def test_optional_future_label_is_not_used_as_target(self) -> None:
         df = sample_frame()
-        df.loc[0, "StateNextMonth"] = "Unknown"
-        with self.assertRaisesRegex(ValueError, "Invalid StateNextMonth target"):
-            engineer_features(df)
+        df["StateNextMonth"] = ["Unknown", "Unknown"]
+        engineered = engineer_features(df)
+        self.assertEqual(engineered["State"].tolist(), [1, 0])
 
     def test_rejects_missing_required_feature(self) -> None:
         df = sample_frame().drop(columns=["Contract"])
