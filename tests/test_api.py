@@ -57,7 +57,6 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(body["predicted_state"], "Churn")
         self.assertEqual(body["decision_threshold"], 0.5)
         self.assertEqual(body["risk_category"], "High")
-        self.assertEqual(body["risk_category"], "High")
 
     def test_batch_prediction(self) -> None:
         response = self.client.post(
