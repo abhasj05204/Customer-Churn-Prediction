@@ -47,7 +47,7 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(health.json()["model_loaded"])
         info = self.client.get("/model-info")
         self.assertEqual(info.status_code, 200)
-        self.assertEqual(info.json()["target"], "StateNextMonth")
+        self.assertEqual(info.json()["target"], "State")
 
     def test_single_prediction_does_not_require_target_or_customer_id(self) -> None:
         response = self.client.post("/predict", json=sample_customer())
@@ -56,6 +56,8 @@ class ApiTests(unittest.TestCase):
         self.assertAlmostEqual(body["churn_probability"], 0.8)
         self.assertEqual(body["predicted_state"], "Churn")
         self.assertEqual(body["decision_threshold"], 0.5)
+        self.assertEqual(body["risk_category"], "High")
+        self.assertEqual(body["risk_category"], "High")
 
     def test_batch_prediction(self) -> None:
         response = self.client.post(

@@ -1,4 +1,4 @@
-"""Reusable feature engineering for training/inference on StateNextMonth."""
+"""Reusable feature engineering for training/inference on the recorded State label."""
 from __future__ import annotations
 
 import numpy as np
@@ -10,7 +10,7 @@ REQUIRED_INPUT_COLUMNS = (
     "PhoneService", "MultipleLines", "InternetService", "OnlineSecurity",
     "OnlineBackup", "DeviceProtection", "TechSupport", "StreamingTV",
     "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
-    "MonthlyCharges", "TotalCharges", "State", "StateNextMonth",
+    "MonthlyCharges", "TotalCharges", "State",
 )
 RAW_FEATURE_COLUMNS = tuple(
     column for column in REQUIRED_INPUT_COLUMNS if column not in {"customerID", "State", "StateNextMonth"}
@@ -66,32 +66,32 @@ def engineer_inference_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Return an engineered training frame with a binary StateNextMonth target."""
-    if "StateNextMonth" not in df.columns:
-        raise ValueError("Training dataframe must contain the StateNextMonth target column.")
-    target = df["StateNextMonth"].astype("string").str.strip()
+    """Return engineered predictors with the recorded State label encoded as 0/1."""
+    if "State" not in df.columns:
+        raise ValueError("Training dataframe must contain the State target column.")
+    target = df["State"].astype("string").str.strip()
     invalid = sorted(
         str(value) for value in target[~target.isin(TARGET_MAP)].dropna().unique()
     )
     missing_target = int(target.isna().sum())
     if invalid or missing_target:
         raise ValueError(
-            f"Invalid StateNextMonth target values: {invalid}; missing target rows: {missing_target}."
+            f"Invalid State target values: {invalid}; missing target rows: {missing_target}."
         )
 
     out = engineer_inference_features(df)
-    out["StateNextMonth"] = target.map(TARGET_MAP).astype("int8")
+    out["State"] = target.map(TARGET_MAP).astype("int8")
     return out
 
 
 def split_features_target(engineered_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    """Split engineered data into predictors and binary StateNextMonth target."""
-    if "StateNextMonth" not in engineered_df.columns:
-        raise ValueError("Engineered dataframe must contain the StateNextMonth target column.")
-    if engineered_df["StateNextMonth"].isna().any():
-        raise ValueError("StateNextMonth target contains missing values.")
-    X = engineered_df.drop(columns=["StateNextMonth"]).copy()
-    y = engineered_df["StateNextMonth"].copy().astype("int8")
+    """Split engineered predictors and binary recorded-State target."""
+    if "State" not in engineered_df.columns:
+        raise ValueError("Engineered dataframe must contain the State target column.")
+    if engineered_df["State"].isna().any():
+        raise ValueError("State target contains missing values.")
+    X = engineered_df.drop(columns=["State"]).copy()
+    y = engineered_df["State"].copy().astype("int8")
     forbidden = [c for c in ("customerID", "State", "StateNextMonth") if c in X.columns]
     if forbidden:
         raise ValueError(

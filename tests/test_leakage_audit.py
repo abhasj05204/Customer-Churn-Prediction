@@ -31,7 +31,7 @@ def valid_source_frame(include_next_month: bool = False) -> pd.DataFrame:
         "TotalCharges": 840.0,
         "State": "No Churn",
     }
-    df = pd.DataFrame([row], columns=REQUIRED_INPUT_COLUMNS)
+    df = pd.DataFrame([row], columns=REQUIRED_INPUT_COLUMNS + ("State",))
     if include_next_month:
         df["StateNextMonth"] = "Churn"
     return df

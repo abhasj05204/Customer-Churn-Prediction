@@ -86,7 +86,7 @@ def run_smoke_test(
         "status": "passed",
         "model_artifact": str(model_path),
         "model_type": type(model).__name__,
-        "target": "StateNextMonth",
+        "target": "State",
         "threshold": threshold,
         "single_prediction": single,
         "batch_prediction_count": batch["count"],
@@ -94,7 +94,7 @@ def run_smoke_test(
         "target_and_identifier_fields_sent_to_api": False,
         "warning": (
             "This validates model/API wiring with source rows. It does not verify the provenance "
-            "or temporal alignment of StateNextMonth labels, or establish business performance."
+            "or temporal alignment of recorded State labels, or establish future prediction performance."
         ),
     }
 
