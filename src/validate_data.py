@@ -16,8 +16,8 @@ import pandas as pd
 from src.feature_engineering import REQUIRED_INPUT_COLUMNS
 
 # Keep validation and the training/inference contract synchronized.
-EXPECTED_COLUMNS = REQUIRED_INPUT_COLUMNS
-REQUIRED_COLUMNS = ("customerID", "State", "StateNextMonth")
+EXPECTED_COLUMNS = REQUIRED_INPUT_COLUMNS + (\"State\",)
+REQUIRED_COLUMNS = ("customerID", "State")
 NUMERIC_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
 NONNEGATIVE_COLUMNS = ("SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges")
 VALID_TARGET_LABELS = ("No Churn", "Churn")
@@ -61,7 +61,7 @@ def audit_dataset(df: pd.DataFrame) -> dict[str, Any]:
 
     customer_ids = df["customerID"].astype("string").str.strip()
     duplicate_id_rows = int(customer_ids.duplicated(keep=False).sum())
-    target = df["StateNextMonth"].astype("string").str.strip()
+    target = df["State"].astype("string").str.strip()
     target_counts = {label: int(target.eq(label).sum()) for label in VALID_TARGET_LABELS}
     unknown_targets = sorted(
         str(v) for v in target[~target.isin(VALID_TARGET_LABELS)].dropna().unique()
@@ -181,7 +181,7 @@ def audit_dataset(df: pd.DataFrame) -> dict[str, Any]:
         "exact_duplicate_rows": duplicate_rows,
         "unique_customer_ids": int(customer_ids.nunique(dropna=True)),
         "rows_with_duplicate_customer_id": duplicate_id_rows,
-        "target_column": "StateNextMonth",
+        "target_column": "State",
         "target_counts": target_counts,
         "unknown_target_labels": unknown_targets,
         "missing_target_labels": missing_target,
