@@ -1,4 +1,4 @@
-"""Leakage-safe baseline model comparison for the StateNextMonth target."""
+"""Leakage-safe baseline model comparison for the recorded State target."""
 from __future__ import annotations
 
 import argparse
@@ -136,8 +136,8 @@ def run_baseline_experiment(
             "sha256": dataset_sha256,
             "rows": int(len(raw_df)),
             "columns": int(len(raw_df.columns)),
-            "target_column": "StateNextMonth",
-            "target_counts": {str(k): int(v) for k, v in raw_df["StateNextMonth"].value_counts().items()},
+            "target_column": "State",
+            "target_counts": {str(k): int(v) for k, v in raw_df["State"].value_counts().items()},
         },
         "split": {
             "test_size": float(test_size),
