@@ -107,8 +107,8 @@ def create_app(
         title="Customer Churn Prediction API",
         version="1.0.0",
         description=(
-            "Predicts the supplied StateNextMonth label from customer service and billing features. "
-            "The target provenance and temporal alignment have not been independently verified."
+            "Classifies the recorded State label from customer service and billing features. "
+            "The dataset does not establish a verified future prediction horizon."
         ),
     )
     application.state.model = loaded_model
