@@ -1,6 +1,6 @@
 """Select a model/threshold without using the holdout, then evaluate once.
 
-The dataset target is StateNextMonth. Its provenance and temporal alignment must
+The supported dataset target is recorded State. Its semantics describe current recorded status, not a future horizon.
 be independently verified before claiming real-world next-month forecasting.
 """
 from __future__ import annotations
@@ -319,10 +319,10 @@ def run_final_evaluation(
             "sha256": dataset_sha256,
             "rows": int(len(raw_df)),
             "columns": int(len(raw_df.columns)),
-            "target_column": "StateNextMonth",
+            "target_column": "State",
             "target_counts": {
                 str(label): int(count)
-                for label, count in raw_df["StateNextMonth"].value_counts().items()
+                for label, count in raw_df["State"].value_counts().items()
             },
         },
         "split": {
