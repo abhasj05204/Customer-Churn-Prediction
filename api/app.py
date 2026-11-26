@@ -144,8 +144,12 @@ def create_app(
             "model_loaded": application.state.model is not None,
             "model_name": application.state.model_name,
             "target": "State",
-            "decision_threshold": float(application.state.threshold),\n            "risk_bands": {"low": "below 40%", "medium": "40% to below 70%", "high": "70% or above"},
-            "prediction_horizon": "recorded-state classification; future horizon not established",
+            "decision_threshold": float(application.state.threshold),
+            "risk_bands": {
+                "low": "below 40%",
+                "medium": "40% to below 70%",
+                "high": "70% or above",
+            },
         }
 
     def predict_one(customer: CustomerFeatures) -> PredictionResponse:
