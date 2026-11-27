@@ -27,7 +27,6 @@ permissions:
 
 jobs:
   model-validation:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-model-validation]')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
