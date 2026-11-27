@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm install --prefix frontend && npm run build --prefix frontend",
-  "installCommand": "python -m pip install -r api/requirements.txt && npm install --prefix frontend",
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/**/*.py": {
