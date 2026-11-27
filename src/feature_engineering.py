@@ -1,4 +1,8 @@
-"""Reusable feature engineering for training/inference on the recorded State label."""
+"""Reusable feature engineering for training/inference on recorded State.
+
+The source file contains no verified observation/outcome timestamps, so this
+contract does not claim next-month or another future-horizon churn forecast.
+"""
 from __future__ import annotations
 
 import numpy as np
