@@ -1,4 +1,4 @@
-# Keep the serverless API dependency set small; train models outside requests.
+# Minimal dependencies required by the Vercel FastAPI inference function.
 fastapi==0.162.0
 pydantic==2.12.5
 numpy==2.5.3
