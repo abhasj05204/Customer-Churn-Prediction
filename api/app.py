@@ -84,6 +84,34 @@ def _model_name(model: object) -> str:
     return type(model).__name__
 
 
+def _download_public_model_artifacts() -> tuple[Path, Path]:
+    """Fetch the versioned public GitHub Release artifacts on Vercel cold start."""
+    import urllib.request
+
+    cache_dir = Path("/tmp/customer-churn-model")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    model_path = cache_dir / "final_pipeline.joblib"
+    report_path = cache_dir / "final_evaluation.json"
+    assets = (
+        (model_path, "final_pipeline.joblib"),
+        (report_path, "final_evaluation.json"),
+    )
+    for destination, filename in assets:
+        if destination.is_file():
+            continue
+        url = (
+            "https://github.com/abhasj05204/Customer-Churn-Prediction/"
+            f"releases/latest/download/{filename}"
+        )
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "customer-churn-api"})
+            with urllib.request.urlopen(request, timeout=15) as response:
+                destination.write_bytes(response.read())
+        except Exception:
+            destination.unlink(missing_ok=True)
+    return model_path, report_path
+
+
 def create_app(
     model: object | None = None,
     model_path: Path | None = None,
@@ -93,6 +121,10 @@ def create_app(
     """Create the API; model injection is supported for tests."""
     resolved_model_path = model_path or Path(os.getenv("CHURN_MODEL_PATH", str(DEFAULT_MODEL_PATH)))
     resolved_report_path = report_path or Path(os.getenv("CHURN_REPORT_PATH", str(DEFAULT_REPORT_PATH)))
+    if os.getenv("VERCEL") == "1" and not resolved_model_path.is_file():
+        resolved_model_path, downloaded_report_path = _download_public_model_artifacts()
+        if report_path is None and not os.getenv("CHURN_REPORT_PATH"):
+            resolved_report_path = downloaded_report_path
     fallback_threshold = float(os.getenv("CHURN_THRESHOLD", "0.5"))
     chosen_threshold = fallback_threshold if threshold is None else float(threshold)
     if not 0.0 < chosen_threshold < 1.0:
