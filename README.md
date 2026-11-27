@@ -274,3 +274,12 @@ The old Optuna validation score must not be treated as an unbiased generalizatio
 - Do not interpret association or feature importance as proof of causation.
 - Do not select a model or decision threshold using final test results.
 - Current results classify the dataset's State label; they do not establish future churn prediction.
+
+
+## API contract and deployment readiness
+
+The FastAPI service exposes `GET /health`, `GET /model-info`, `POST /predict`, and `POST /predict/batch`. Prediction requests contain the 19 approved customer input fields only; identifiers and target labels are not accepted. Responses report the probability and classification of the dataset's recorded `State` label. They must not be described as next-month forecasts because the committed CSV does not establish an observation date or future outcome window.
+
+The fitted pipeline and evaluation report are generated locally under `outputs/` and are intentionally excluded from Git. The model-validation GitHub Actions workflow uploads them as a time-limited workflow artifact for review; this artifact is not automatically installed into a Vercel deployment. A production deployment must provision the exact trained artifact through a durable, access-controlled artifact source and configure the API's `CHURN_MODEL_PATH` and `CHURN_REPORT_PATH` accordingly. Do not deploy the API as prediction-ready until `/health` reports `model_loaded: true` and a real `/predict` smoke test succeeds.
+
+Vercel supports Python/FastAPI applications, but this repository's current Vercel configuration and ignored model artifact still require a deployment-specific integration test. See the [Vercel Python runtime guidance](https://vercel.com/docs/functions/runtimes/python) before creating the production project. The current deployment status is **not deployed**; CI success alone is not evidence of a live application.
