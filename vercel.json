@@ -12,5 +12,6 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "installCommand": "python -m pip install -r api/requirements.txt && npm install --prefix frontend"
 }
