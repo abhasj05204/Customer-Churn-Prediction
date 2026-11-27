@@ -42,7 +42,7 @@ class FeatureEngineeringTests(unittest.TestCase):
         engineered = engineer_features(df)
         pd.testing.assert_frame_equal(df, original)
         self.assertNotIn("customerID", engineered.columns)
-        self.assertNotIn("State", engineered.columns)
+        self.assertIn("State", engineered.columns)
         self.assertEqual(engineered["State"].tolist(), [1, 0])
         self.assertEqual(engineered["ServiceCount"].tolist(), [5, 0])
         self.assertEqual(engineered["SecuritySupportCount"].tolist(), [2, 0])
@@ -73,7 +73,7 @@ class FeatureEngineeringTests(unittest.TestCase):
         raw["future_churn_label"] = ["Churn", "No Churn"]
         features = engineer_inference_features(raw)
         self.assertNotIn("future_churn_label", features.columns)
-        self.assertEqual(len(features.columns), len(raw.columns) + 4)
+        self.assertEqual(len(features.columns), 23)
 
     def test_optional_future_label_is_not_used_as_target(self) -> None:
         df = sample_frame()

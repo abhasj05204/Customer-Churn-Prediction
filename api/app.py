@@ -49,6 +49,7 @@ class PredictionResponse(BaseModel):
     predicted_state: Literal["No Churn", "Churn"]
     decision_threshold: float = Field(gt=0, lt=1)
     model_name: str
+    risk_category: Literal["Low", "Medium", "High"]
 
 
 class BatchPredictionRequest(BaseModel):
@@ -107,8 +108,8 @@ def create_app(
         title="Customer Churn Prediction API",
         version="1.0.0",
         description=(
-            "Predicts the supplied StateNextMonth label from customer service and billing features. "
-            "The target provenance and temporal alignment have not been independently verified."
+            "Classifies the recorded State label from customer service and billing features. "
+            "The dataset does not establish a verified future prediction horizon."
         ),
     )
     application.state.model = loaded_model
@@ -143,8 +144,12 @@ def create_app(
             "model_loaded": application.state.model is not None,
             "model_name": application.state.model_name,
             "target": "State",
-            "decision_threshold": float(application.state.threshold),\n            "risk_bands": {"low": "below 40%", "medium": "40% to below 70%", "high": "70% or above"},
-            "prediction_horizon": "recorded-state classification; future horizon not established",
+            "decision_threshold": float(application.state.threshold),
+            "risk_bands": {
+                "low": "below 40%",
+                "medium": "40% to below 70%",
+                "high": "70% or above",
+            },
         }
 
     def predict_one(customer: CustomerFeatures) -> PredictionResponse:
@@ -168,11 +173,13 @@ def create_app(
             raise HTTPException(status_code=422, detail=f"Could not process customer input: {exc}") from exc
 
         label = "Churn" if churn_probability >= application.state.threshold else "No Churn"
+        risk_category = "High" if churn_probability >= 0.70 else "Medium" if churn_probability >= 0.40 else "Low"
         return PredictionResponse(
             churn_probability=churn_probability,
             predicted_state=label,
             decision_threshold=float(application.state.threshold),
             model_name=application.state.model_name or "unknown",
+            risk_category=risk_category,
         )
 
     @application.post("/predict", response_model=PredictionResponse)
