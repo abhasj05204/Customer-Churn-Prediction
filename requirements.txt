@@ -1,18 +1,8 @@
-# Direct dependencies recorded from the project's current notebook environment.
-# This intentionally excludes Jupyter's transitive dependencies and Windows-only helpers.
-# Python 3.12 is the recommended starting point; validate installation in a clean venv.
+# Production inference dependencies only. Keep this file small for Vercel's Python function.
+# Keep scikit-learn/joblib versions aligned with the model-validation environment.
+fastapi==0.162.0
+pydantic==2.12.5
 numpy==2.5.3
 pandas==3.0.6
-scipy==1.18.1
-matplotlib==3.11.2
-seaborn==0.13.2
 scikit-learn==1.9.1
-imbalanced-learn==0.14.2
-xgboost==3.4.1
-optuna==5.0.0
-shap==0.52.0
-jupyterlab==4.6.3
-ipykernel==7.3.0
-fastapi==0.162.0
-uvicorn[standard]==0.54.0
-httpx==0.28.1
+joblib==1.5.3
