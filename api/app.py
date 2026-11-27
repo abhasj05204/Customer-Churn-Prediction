@@ -84,6 +84,34 @@ def _model_name(model: object) -> str:
     return type(model).__name__
 
 
+def _download_public_model_artifacts() -> tuple[Path, Path]:
+    """Fetch the versioned public GitHub Release artifacts on Vercel cold start."""
+    import urllib.request
+
+    cache_dir = Path("/tmp/customer-churn-model")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    model_path = cache_dir / "final_pipeline.joblib"
+    report_path = cache_dir / "final_evaluation.json"
+    assets = (
+        (model_path, "final_pipeline.joblib"),
+        (report_path, "final_evaluation.json"),
+    )
+    for destination, filename in assets:
+        if destination.is_file():
+            continue
+        url = (
+            "https://github.com/abhasj05204/Customer-Churn-Prediction/"
+            f"releases/latest/download/{filename}"
+        )
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "customer-churn-api"})
+            with urllib.request.urlopen(request, timeout=15) as response:
+                destination.write_bytes(response.read())
+        except Exception:
+            destination.unlink(missing_ok=True)
+    return model_path, report_path
+
+
 def create_app(
     model: object | None = None,
     model_path: Path | None = None,
@@ -93,6 +121,10 @@ def create_app(
     """Create the API; model injection is supported for tests."""
     resolved_model_path = model_path or Path(os.getenv("CHURN_MODEL_PATH", str(DEFAULT_MODEL_PATH)))
     resolved_report_path = report_path or Path(os.getenv("CHURN_REPORT_PATH", str(DEFAULT_REPORT_PATH)))
+    if os.getenv("VERCEL") == "1" and not resolved_model_path.is_file():
+        resolved_model_path, downloaded_report_path = _download_public_model_artifacts()
+        if report_path is None and not os.getenv("CHURN_REPORT_PATH"):
+            resolved_report_path = downloaded_report_path
     fallback_threshold = float(os.getenv("CHURN_THRESHOLD", "0.5"))
     chosen_threshold = fallback_threshold if threshold is None else float(threshold)
     if not 0.0 < chosen_threshold < 1.0:
@@ -107,6 +139,8 @@ def create_app(
     application = FastAPI(
         title="Customer Churn Prediction API",
         version="1.0.0",
+        docs_url="/api/docs",
+        openapi_url="/api/openapi.json",
         description=(
             "Classifies the recorded State label from customer service and billing features. "
             "The dataset does not establish a verified future prediction horizon."
@@ -133,11 +167,13 @@ def create_app(
         allow_headers=["Content-Type", "Authorization"],
     )
 
+    @application.get("/api/health")
     @application.get("/health")
     def health() -> dict[str, object]:
         model_loaded = application.state.model is not None
         return {"status": "ok" if model_loaded else "degraded", "model_loaded": model_loaded}
 
+    @application.get("/api/model-info")
     @application.get("/model-info")
     def model_info() -> dict[str, object]:
         return {
@@ -182,10 +218,12 @@ def create_app(
             risk_category=risk_category,
         )
 
+    @application.post("/api/predict", response_model=PredictionResponse)
     @application.post("/predict", response_model=PredictionResponse)
     def predict(customer: CustomerFeatures) -> PredictionResponse:
         return predict_one(customer)
 
+    @application.post("/api/predict/batch", response_model=BatchPredictionResponse)
     @application.post("/predict/batch", response_model=BatchPredictionResponse)
     def predict_batch(request: BatchPredictionRequest) -> BatchPredictionResponse:
         predictions = [predict_one(customer) for customer in request.customers]
