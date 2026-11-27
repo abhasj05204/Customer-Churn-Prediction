@@ -1,0 +1,39 @@
+name: Publish production model artifact
+
+on:
+  workflow_run:
+    workflows: ["Model validation and evaluation"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish-model:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download validated model artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: customer-churn-model-evaluation
+          path: model-artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Verify required production files
+        run: |
+          test -s model-artifacts/final_pipeline.joblib
+          test -s model-artifacts/final_evaluation.json
+          python -c 'import json; d=json.load(open("model-artifacts/final_evaluation.json")); t=float(d["final_threshold"]); assert 0 < t < 1; print("Validated threshold:", t)'
+
+      - name: Create or update stable model release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view model-latest >/dev/null 2>&1; then
+            gh release create model-latest --title "Customer churn production model" --notes "Published after successful model validation. Target: recorded State; not a verified future-horizon forecast."
+          fi
+          gh release upload model-latest model-artifacts/final_pipeline.joblib model-artifacts/final_evaluation.json --clobber
