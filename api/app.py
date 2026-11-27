@@ -107,6 +107,8 @@ def create_app(
     application = FastAPI(
         title="Customer Churn Prediction API",
         version="1.0.0",
+        docs_url="/api/docs",
+        openapi_url="/api/openapi.json",
         description=(
             "Classifies the recorded State label from customer service and billing features. "
             "The dataset does not establish a verified future prediction horizon."
@@ -133,11 +135,13 @@ def create_app(
         allow_headers=["Content-Type", "Authorization"],
     )
 
+    @application.get("/api/health")
     @application.get("/health")
     def health() -> dict[str, object]:
         model_loaded = application.state.model is not None
         return {"status": "ok" if model_loaded else "degraded", "model_loaded": model_loaded}
 
+    @application.get("/api/model-info")
     @application.get("/model-info")
     def model_info() -> dict[str, object]:
         return {
@@ -182,10 +186,12 @@ def create_app(
             risk_category=risk_category,
         )
 
+    @application.post("/api/predict", response_model=PredictionResponse)
     @application.post("/predict", response_model=PredictionResponse)
     def predict(customer: CustomerFeatures) -> PredictionResponse:
         return predict_one(customer)
 
+    @application.post("/api/predict/batch", response_model=BatchPredictionResponse)
     @application.post("/predict/batch", response_model=BatchPredictionResponse)
     def predict_batch(request: BatchPredictionRequest) -> BatchPredictionResponse:
         predictions = [predict_one(customer) for customer in request.customers]
