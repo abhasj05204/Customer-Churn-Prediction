@@ -20,6 +20,7 @@ on:
       - "data/telco_churn.csv"
       - "requirements.txt"
       - ".github/workflows/model-validation.yml"
+      - ".github/workflows/publish-model.yml"
 
 permissions:
   contents: read
