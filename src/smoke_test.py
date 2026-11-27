@@ -1,4 +1,9 @@
-"""End-to-end smoke test for a newly saved final model and the FastAPI inference path."""
+"""End-to-end smoke test for the saved model and FastAPI inference path.
+
+This workflow validates the recorded State classification contract. A
+successful run also publishes the exact tested pipeline and evaluation JSON
+for the Vercel API to load; model artifacts are never fabricated at deploy time.
+"""
 from __future__ import annotations
 
 import argparse
